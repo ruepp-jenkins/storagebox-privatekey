@@ -1,11 +1,21 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 echo "Initialize docker"
 
-echo ${DOCKER_API_PASSWORD} | docker login --username ${DOCKER_USERNAME} --password-stdin
+: "${DOCKER_USERNAME:?DOCKER_USERNAME is required}"
+: "${DOCKER_API_PASSWORD:?DOCKER_API_PASSWORD is required}"
+
+BUILDER_NAME="${BUILDER_NAME:-mybuilder}"
+
+printf '%s' "${DOCKER_API_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
 docker buildx install
 
-set +e
-echo "Adding buildx builder - this could throw a 'wanted' error if it already exist"
-docker buildx create --name mybuilder --bootstrap --use
-set -e
+if docker buildx inspect "${BUILDER_NAME}" > /dev/null 2>&1; then
+    echo "Using existing buildx builder: ${BUILDER_NAME}"
+    docker buildx use "${BUILDER_NAME}"
+else
+    echo "Creating buildx builder: ${BUILDER_NAME}"
+    docker buildx create --name "${BUILDER_NAME}" --driver docker-container --use
+fi
+
+docker buildx inspect --bootstrap "${BUILDER_NAME}"

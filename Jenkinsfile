@@ -15,6 +15,8 @@ pipeline {
 
     environment {
         IMAGE_FULLNAME = 'ruepp/storagebox-privatekey'
+        DOCKER_PLATFORMS = 'linux/amd64,linux/arm64'
+        BUILDER_NAME = 'mybuilder'
         DOCKER_API_PASSWORD = credentials('DOCKER_API_PASSWORD')
     }
 
@@ -55,10 +57,47 @@ pipeline {
                 credentialsId: 'github.com-ssh'
             }
         }
+        stage('Prepare Buildx') {
+            steps {
+                sh 'docker run --privileged --rm tonistiigi/binfmt --install arm64'
+            }
+        }
         stage('Build') {
             steps {
+                script {
+                    env.DATESTAMP = sh(script: 'date +%Y%m%d', returnStdout: true).trim()
+                }
                 sh 'chmod +x scripts/*.sh'
                 sh './scripts/start.sh'
+            }
+        }
+        stage('Verify Manifest') {
+            steps {
+                script {
+                    def imageRef
+
+                    if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main') {
+                        imageRef = "${env.IMAGE_FULLNAME}:latest"
+                    } else {
+                        imageRef = "${env.IMAGE_FULLNAME}-test:${env.BRANCH_NAME}-${env.DATESTAMP}"
+                    }
+
+                    withEnv(["IMAGE_REF=${imageRef}"]) {
+                        sh '''
+                            set -euo pipefail
+                            echo "Verifying pushed manifest for ${IMAGE_REF}"
+                            manifest_output="$(docker buildx imagetools inspect "${IMAGE_REF}")"
+                            printf '%s\n' "${manifest_output}"
+
+                            for platform in $(printf '%s' "${DOCKER_PLATFORMS}" | tr ',' ' '); do
+                                if ! printf '%s\n' "${manifest_output}" | grep -Eq "Platform:[[:space:]]+${platform}"; then
+                                    echo "Missing platform '${platform}' in ${IMAGE_REF}"
+                                    exit 1
+                                fi
+                            done
+                        '''
+                    }
+                }
             }
         }
     }
