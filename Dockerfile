@@ -4,6 +4,7 @@ WORKDIR /src
 COPY StorageBoxKeyTool.sln ./
 COPY StorageBoxKeyTool.Api/StorageBoxKeyTool.Api.csproj StorageBoxKeyTool.Api/
 COPY StorageBoxKeyTool.Client/StorageBoxKeyTool.Client.csproj StorageBoxKeyTool.Client/
+COPY StorageBoxKeyTool.Tests/StorageBoxKeyTool.Tests.csproj StorageBoxKeyTool.Tests/
 
 RUN dotnet restore StorageBoxKeyTool.sln
 

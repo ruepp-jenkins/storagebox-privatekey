@@ -149,6 +149,8 @@ Agent guidance for working in this repository.
 
 - Update `README.md` when behavior or run instructions change.
 - Always review and update `AGENTS.md` when project structure, commands, conventions, security rules, or workflows change.
+- After code changes, run `dotnet build StorageBoxKeyTool.sln` and relevant `dotnet test` commands before finishing.
+- When behavior, validation, or workflows change, review whether existing tests must be updated and whether new tests must be added.
 - Keep command examples copy/paste friendly.
 - Ensure new instructions are local-first and security-aware.
 
@@ -164,8 +166,10 @@ Agent guidance for working in this repository.
 ## 15) Definition of Done for Agent Changes
 
 - Code compiles with `dotnet build StorageBoxKeyTool.sln`.
+- Relevant automated tests pass (`dotnet test StorageBoxKeyTool.sln` or targeted test filters when appropriate).
 - Formatting passes (`dotnet format ... --verify-no-changes`) when practical.
 - Any changed workflow is documented in `README.md`.
 - `AGENTS.md` has been reviewed and updated when needed.
+- Test impact has been reviewed; tests were adjusted or added when needed.
 - Security constraints around secrets are preserved.
 - No unrelated refactors or drive-by changes.

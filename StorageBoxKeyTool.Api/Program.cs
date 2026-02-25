@@ -10,6 +10,26 @@ builder.Services.AddSingleton<StorageBoxSftpService>();
 
 var app = builder.Build();
 
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var urls = app.Urls
+        .Select(ToDisplayUrl)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    if (urls.Length == 0)
+    {
+        Console.WriteLine("Storage Box SSH Key Installer started.");
+        Console.WriteLine("Open in browser: http://localhost:8080");
+        return;
+    }
+
+    foreach (var url in urls)
+    {
+        Console.WriteLine($"Storage Box SSH Key Installer started. Open in browser: {url}");
+    }
+});
+
 app.UseDefaultFiles();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
@@ -90,4 +110,28 @@ app.Run();
 static IResult CreateErrorResult(int statusCode, string step, string message, string? detail)
 {
     return Results.Json(new ApiErrorResponse(step, message, detail), statusCode: statusCode);
+}
+
+static string ToDisplayUrl(string rawUrl)
+{
+    if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
+    {
+        return rawUrl;
+    }
+
+    var host = uri.Host switch
+    {
+        "0.0.0.0" => "localhost",
+        "::" => "localhost",
+        "*" => "localhost",
+        "+" => "localhost",
+        _ => uri.Host
+    };
+
+    var builder = new UriBuilder(uri)
+    {
+        Host = host
+    };
+
+    return builder.Uri.ToString().TrimEnd('/');
 }
