@@ -10,7 +10,7 @@
     border: 1px solid var(--surface-border);
     border-radius: 20px;
     padding: 1.25rem;
-    box-shadow: 0 14px 45px rgba(5, 31, 38, 0.1);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
 }
 
 .tool-header h1 {
@@ -83,7 +83,7 @@ input[type="file"] {
     width: 100%;
     border: 1px solid var(--field-border);
     border-radius: 12px;
-    background: #fff;
+    background: var(--field-bg);
     color: var(--text-main);
     padding: 0.65rem 0.75rem;
     box-sizing: border-box;
@@ -91,8 +91,28 @@ input[type="file"] {
 
 .field-input:focus,
 .key-input:focus {
-    outline: 2px solid color-mix(in oklab, var(--accent) 35%, transparent);
+    outline: 2px solid var(--focus-ring);
     border-color: var(--accent);
+}
+
+.field-input::placeholder,
+.key-input::placeholder {
+    color: color-mix(in oklab, var(--text-soft) 82%, transparent);
+}
+
+input[type="file"]::file-selector-button {
+    margin-right: 0.65rem;
+    border: 1px solid #33505d;
+    border-radius: 8px;
+    background: #22333d;
+    color: #d9e8ed;
+    padding: 0.35rem 0.6rem;
+    font: inherit;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: #2a3e48;
 }
 
 .key-input {
@@ -158,12 +178,12 @@ input[type="file"] {
 }
 
 .btn {
-    border: none;
+    border: 1px solid transparent;
     border-radius: 999px;
     padding: 0.65rem 1.1rem;
     cursor: pointer;
     font-weight: 600;
-    transition: transform 120ms ease, opacity 120ms ease;
+    transition: transform 120ms ease, opacity 120ms ease, background-color 120ms ease;
 }
 
 .btn:hover:enabled {
@@ -176,18 +196,29 @@ input[type="file"] {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-    color: #fff;
+    background: linear-gradient(135deg, var(--accent-button), var(--accent-button-strong));
+    border-color: #2b8090;
+    color: #f2fcff;
 }
 
 .btn-secondary {
-    background: #e9f1f0;
-    color: #12323a;
+    background: #22333d;
+    border-color: #33505d;
+    color: #d9e8ed;
 }
 
 .btn-danger {
-    background: #c7432f;
+    background: #a24337;
+    border-color: #c86354;
     color: #fff;
+}
+
+.btn-secondary:hover:enabled {
+    background: #2a3e48;
+}
+
+.btn-danger:hover:enabled {
+    background: #8f372d;
 }
 
 .status {
@@ -195,20 +226,20 @@ input[type="file"] {
 }
 
 .status.success {
-    border-left-color: #228b59;
+    border-left-color: var(--success);
 }
 
 .status.warning {
-    border-left-color: #d07119;
+    border-left-color: var(--warning);
 }
 
 .status.error {
-    border-left-color: #c7432f;
+    border-left-color: var(--danger-strong);
 }
 
 .warning-note {
     margin: 0 0 0.9rem;
-    color: #7d3b06;
+    color: var(--warning);
 }
 
 .key-grid {
@@ -229,24 +260,25 @@ input[type="file"] {
     font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
     font-size: 0.82rem;
     line-height: 1.38;
-    background: #fefefe;
+    background: var(--field-bg);
     padding: 0.75rem;
     resize: vertical;
-    color: #132d35;
+    color: var(--text-main);
 }
 
 .validation-summary {
     grid-column: 1 / -1;
-    border: 1px solid #e7b4af;
-    background: #fff2f1;
+    border: 1px solid var(--danger-strong);
+    background: var(--danger-muted);
     border-radius: 10px;
     padding: 0.7rem 0.85rem;
     margin: 0;
+    color: var(--danger);
 }
 
 .validation-message {
     font-size: 0.84rem;
-    color: #b12f1c;
+    color: var(--danger);
 }
 
 .log-list {
@@ -280,16 +312,16 @@ input[type="file"] {
 }
 
 .log-entry.success {
-    border-color: #9fd7bb;
+    border-color: color-mix(in oklab, var(--success) 52%, var(--field-border));
 }
 
 .log-entry.warning {
-    border-color: #e6bf93;
+    border-color: color-mix(in oklab, var(--warning) 52%, var(--field-border));
 }
 
 .log-entry.error {
-    border-color: #e7b4af;
-    background: #fff4f2;
+    border-color: var(--danger-strong);
+    background: var(--danger-muted);
 }
 
 @media (max-width: 860px) {
