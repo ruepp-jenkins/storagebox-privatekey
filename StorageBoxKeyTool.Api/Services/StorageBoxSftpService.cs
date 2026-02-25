@@ -109,7 +109,6 @@ public sealed class StorageBoxSftpService
         }
 
         UploadTextFile(client, AuthorizedKeysPath, desiredContent);
-        SetPermissions(client, AuthorizedKeysPath, "644");
 
         var verificationContent = DownloadTextFile(client, AuthorizedKeysPath);
         var normalizedVerification = PublicKeyUtility.NormalizeAuthorizedKeysContent(verificationContent);
@@ -170,12 +169,6 @@ public sealed class StorageBoxSftpService
         {
             client.CreateDirectory(SshDirectoryPath);
         }
-    }
-
-    private static void SetPermissions(SftpClient client, string path, string octalPermission)
-    {
-        var mode = Convert.ToInt16(octalPermission, 8);
-        client.ChangePermissions(path, mode);
     }
 
     private static string DownloadTextFile(SftpClient client, string remotePath)
