@@ -2,12 +2,32 @@
 set -euo pipefail
 echo "Starting build workflow"
 
+DATESTAMP="${DATESTAMP:-$(date +%Y%m%d)}"
+DOCKER_PLATFORMS="${DOCKER_PLATFORMS:-linux/amd64,linux/arm64}"
+
+if [ -z "${BUILDER_NAME:-}" ]; then
+    builder_scope="${BUILD_TAG:-${JOB_NAME:-local}-${BUILD_NUMBER:-$(date +%s)}}"
+    builder_scope="$(printf '%s' "${builder_scope}" | tr '/:@ ' '----' | tr -cd '[:alnum:]_.-')"
+
+    if [ -z "${builder_scope}" ]; then
+        builder_scope="$(date +%s)"
+    fi
+
+    BUILDER_NAME="mybuilder-${builder_scope}"
+fi
+
+export BUILDER_NAME
+
+cleanup() {
+    scripts/docker_cleanup.sh
+}
+
+trap cleanup EXIT
+
 scripts/docker_initialize.sh
 
 # run build
-DATESTAMP="${DATESTAMP:-$(date +%Y%m%d)}"
-DOCKER_PLATFORMS="${DOCKER_PLATFORMS:-linux/amd64,linux/arm64}"
-BUILDER_NAME="${BUILDER_NAME:-mybuilder}"
+BRANCH_NAME="${BRANCH_NAME:-local}"
 
 echo "Buildx builder: ${BUILDER_NAME}"
 echo "Build platforms: ${DOCKER_PLATFORMS}"
@@ -29,6 +49,3 @@ else
         --pull \
         --push .
 fi
-
-# cleanup
-scripts/docker_cleanup.sh

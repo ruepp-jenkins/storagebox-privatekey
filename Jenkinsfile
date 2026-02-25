@@ -16,7 +16,6 @@ pipeline {
     environment {
         IMAGE_FULLNAME = 'ruepp/storagebox-privatekey'
         DOCKER_PLATFORMS = 'linux/amd64,linux/arm64'
-        BUILDER_NAME = 'mybuilder'
         DOCKER_API_PASSWORD = credentials('DOCKER_API_PASSWORD')
     }
 
@@ -65,6 +64,8 @@ pipeline {
         stage('Build') {
             steps {
                 script {
+                    def rawBuilderName = "mybuilder-${env.JOB_NAME}-${env.BUILD_NUMBER}"
+                    env.BUILDER_NAME = rawBuilderName.replaceAll('[^A-Za-z0-9_.-]', '-')
                     env.DATESTAMP = sh(script: 'date +%Y%m%d', returnStdout: true).trim()
                 }
                 sh 'chmod +x scripts/*.sh'
