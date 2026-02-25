@@ -35,7 +35,7 @@ The API serves the Blazor static files, so you open one local URL.
 3. Start process:
    - key generation (if selected)
    - remote check of `.ssh/authorized_keys`
-   - if file differs: explicit overwrite confirmation required
+   - if file differs: explicit overwrite confirmation required, then replace the file (delete + re-upload)
    - upload and set `authorized_keys` permissions to `644` (no `.ssh` permission changes)
 4. Success/error is shown and logged step-by-step in UI.
 5. Reset button starts over from scratch.

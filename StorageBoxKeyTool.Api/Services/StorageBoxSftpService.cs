@@ -104,6 +104,8 @@ public sealed class StorageBoxSftpService
             {
                 throw new StorageBoxConflictException("Remote authorized_keys exists and differs from the provided key. Explicit overwrite confirmation is required.");
             }
+
+            client.DeleteFile(AuthorizedKeysPath);
         }
 
         UploadTextFile(client, AuthorizedKeysPath, desiredContent);
