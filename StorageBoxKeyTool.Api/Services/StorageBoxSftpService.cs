@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using System.Text;
 using Renci.SshNet;
 using Renci.SshNet.Common;
@@ -150,6 +151,10 @@ public sealed class StorageBoxSftpService
         catch (SshConnectionException ex)
         {
             throw new InvalidOperationException("Could not connect to the Storage Box host. Ensure SSH support is enabled and reachable on port 23.", ex);
+        }
+        catch (SocketException ex)
+        {
+            throw new InvalidOperationException("Could not resolve the Storage Box host. Verify username and sub-ID, then check network DNS settings.", ex);
         }
         catch (SshOperationTimeoutException ex)
         {
