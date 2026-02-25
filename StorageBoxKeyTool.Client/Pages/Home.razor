@@ -24,14 +24,9 @@
 
             <div class="field">
                 <label for="username">Storage Box username</label>
-                <InputText id="username" class="field-input" @bind-Value="Form.Username" autocomplete="username" placeholder="u123456" />
+                <InputText id="username" class="field-input" @bind-Value="Form.Username" autocomplete="username" placeholder="u123456-sub12" />
+                <p class="field-hint">Enter the full login, including suffix (for example <code>u123456-sub12</code>).</p>
                 <ValidationMessage For="@(() => Form.Username)" />
-            </div>
-
-            <div class="field">
-                <label for="subId">Sub-ID</label>
-                <InputNumber id="subId" class="field-input" @bind-Value="Form.SubId" min="0" max="999999" />
-                <ValidationMessage For="@(() => Form.SubId)" />
             </div>
 
             <div class="field field-full">
@@ -271,7 +266,7 @@
                 return "<username>-sub<sub-id>";
             }
 
-            return $"{Form.Username.Trim().ToLowerInvariant()}-sub{Form.SubId}";
+            return Form.Username.Trim().ToLowerInvariant();
         }
     }
 
@@ -284,7 +279,7 @@
                 return "<username>-sub<sub-id>.your-storagebox.de";
             }
 
-            return $"{Form.Username.Trim().ToLowerInvariant()}-sub{Form.SubId}.your-storagebox.de";
+            return $"{Form.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
         }
     }
 
@@ -332,7 +327,6 @@
             var checkResponse = await ApiClient.CheckRemoteKeyAsync(
                 new CheckKeyRequest(
                     Form.Username.Trim().ToLowerInvariant(),
-                    Form.SubId,
                     Form.Password,
                     publicKey
                 ),
@@ -425,7 +419,6 @@
         var uploadResponse = await ApiClient.UploadRemoteKeyAsync(
             new UploadKeyRequest(
                 Form.Username.Trim().ToLowerInvariant(),
-                Form.SubId,
                 Form.Password,
                 PreparedPublicKey,
                 overwrite
@@ -461,7 +454,6 @@
         var generated = await ApiClient.GenerateKeyAsync(
             new GenerateKeyRequest(
                 Form.Username.Trim().ToLowerInvariant(),
-                Form.SubId,
                 Form.Algorithm,
                 Form.KeySize,
                 Form.KeyPassphrase,
@@ -575,8 +567,8 @@
     private string BuildFilePrefix()
     {
         var login = string.IsNullOrWhiteSpace(Form.Username)
-            ? $"storagebox-sub{Form.SubId}"
-            : $"{Form.Username.Trim().ToLowerInvariant()}-sub{Form.SubId}";
+            ? "storagebox"
+            : Form.Username.Trim().ToLowerInvariant();
 
         var algorithm = GeneratedKey?.Algorithm?.Replace('-', '_') ?? "ssh_key";
 

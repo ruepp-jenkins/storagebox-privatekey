@@ -15,7 +15,7 @@ public sealed class StorageBoxSftpService
 
     public CheckKeyResponse CheckRemoteKey(CheckKeyRequest request)
     {
-        var target = StorageBoxInputValidator.ValidateTarget(request.Username, request.SubId);
+        var target = StorageBoxInputValidator.ValidateTarget(request.Username);
         var password = StorageBoxInputValidator.ValidatePassword(request.Password);
         var normalizedPublicKey = PublicKeyUtility.NormalizeOpenSshPublicKey(request.PublicKey);
         var incomingFingerprint = PublicKeyUtility.ComputeSha256Fingerprint(normalizedPublicKey);
@@ -70,7 +70,7 @@ public sealed class StorageBoxSftpService
 
     public UploadKeyResponse UploadRemoteKey(UploadKeyRequest request)
     {
-        var target = StorageBoxInputValidator.ValidateTarget(request.Username, request.SubId);
+        var target = StorageBoxInputValidator.ValidateTarget(request.Username);
         var password = StorageBoxInputValidator.ValidatePassword(request.Password);
         var normalizedPublicKey = PublicKeyUtility.NormalizeOpenSshPublicKey(request.PublicKey);
         var fingerprint = PublicKeyUtility.ComputeSha256Fingerprint(normalizedPublicKey);
@@ -146,7 +146,7 @@ public sealed class StorageBoxSftpService
         }
         catch (SshAuthenticationException ex)
         {
-            throw new InvalidOperationException("Authentication failed. Check username, sub-ID and password.", ex);
+            throw new InvalidOperationException("Authentication failed. Check username and password.", ex);
         }
         catch (SshConnectionException ex)
         {
@@ -154,7 +154,7 @@ public sealed class StorageBoxSftpService
         }
         catch (SocketException ex)
         {
-            throw new InvalidOperationException("Could not resolve the Storage Box host. Verify username and sub-ID, then check network DNS settings.", ex);
+            throw new InvalidOperationException("Could not resolve the Storage Box host. Verify username format and network DNS settings.", ex);
         }
         catch (SshOperationTimeoutException ex)
         {

@@ -9,7 +9,6 @@ public enum RemoteKeyState
 
 public sealed record GenerateKeyRequest(
     string Username,
-    int SubId,
     string Algorithm,
     int? KeySize,
     string? Passphrase,
@@ -27,7 +26,6 @@ public sealed record GenerateKeyResponse(
 
 public sealed record CheckKeyRequest(
     string Username,
-    int SubId,
     string Password,
     string PublicKey
 );
@@ -45,7 +43,6 @@ public sealed record CheckKeyResponse(
 
 public sealed record UploadKeyRequest(
     string Username,
-    int SubId,
     string Password,
     string PublicKey,
     bool Overwrite

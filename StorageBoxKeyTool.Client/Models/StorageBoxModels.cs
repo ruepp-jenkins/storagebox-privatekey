@@ -18,11 +18,8 @@ public enum RemoteKeyState
 public sealed class StorageBoxFormModel : IValidatableObject
 {
     [Required(ErrorMessage = "Username is required.")]
-    [RegularExpression("^[a-z0-9]{1,32}$", ErrorMessage = "Use lowercase letters and digits only.")]
+    [RegularExpression("^[a-z0-9]{1,32}-sub[0-9]{1,6}$", ErrorMessage = "Use format <base>-sub<id> (for example u123456-sub12).")]
     public string Username { get; set; } = string.Empty;
-
-    [Range(0, 999999, ErrorMessage = "Sub-ID must be between 0 and 999999.")]
-    public int SubId { get; set; }
 
     [Required(ErrorMessage = "Storage Box password is required.")]
     [StringLength(256, ErrorMessage = "Password is too long.")]
@@ -99,7 +96,6 @@ public sealed class StorageBoxFormModel : IValidatableObject
 
 public sealed record GenerateKeyRequest(
     string Username,
-    int SubId,
     string Algorithm,
     int? KeySize,
     string? Passphrase,
@@ -117,7 +113,6 @@ public sealed record GenerateKeyResponse(
 
 public sealed record CheckKeyRequest(
     string Username,
-    int SubId,
     string Password,
     string PublicKey
 );
@@ -135,7 +130,6 @@ public sealed record CheckKeyResponse(
 
 public sealed record UploadKeyRequest(
     string Username,
-    int SubId,
     string Password,
     string PublicKey,
     bool Overwrite

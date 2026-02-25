@@ -6,6 +6,7 @@ Agent guidance for working in this repository.
 
 - Repository type: .NET 9 solution with Blazor WebAssembly frontend + ASP.NET Core API backend.
 - Main goal: generate SSH keys and upload public keys to Hetzner Storage Box on SSH/SFTP port `23`.
+- Connection input uses a single Storage Box login in `<base-username>-sub<sub-id>` format (for example `u123456-sub12`).
 - Solution file: `StorageBoxKeyTool.sln`.
 - Primary documentation: `@README.md`.
 

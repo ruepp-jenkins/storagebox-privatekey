@@ -12,8 +12,7 @@ public sealed class SshKeyGenerationServiceTests
     public async Task GenerateAsync_WithUnsupportedAlgorithm_ThrowsValidationException()
     {
         var request = new GenerateKeyRequest(
-            "u123456",
-            1,
+            "u123456-sub1",
             "dsa",
             null,
             null,
@@ -30,8 +29,7 @@ public sealed class SshKeyGenerationServiceTests
     public async Task GenerateAsync_WithInvalidEcdsaKeySize_ThrowsValidationException(int keySize)
     {
         var request = new GenerateKeyRequest(
-            "u123456",
-            1,
+            "u123456-sub1",
             "ecdsa",
             keySize,
             null,
@@ -47,8 +45,7 @@ public sealed class SshKeyGenerationServiceTests
     public async Task GenerateAsync_WithInvalidRsaKeySize_ThrowsValidationException(int keySize)
     {
         var request = new GenerateKeyRequest(
-            "u123456",
-            1,
+            "u123456-sub1",
             "rsa",
             keySize,
             null,
@@ -62,8 +59,7 @@ public sealed class SshKeyGenerationServiceTests
     public async Task GenerateAsync_WithTooLongPassphrase_ThrowsValidationException()
     {
         var request = new GenerateKeyRequest(
-            "u123456",
-            1,
+            "u123456-sub1",
             "ed25519",
             null,
             new string('p', 257),

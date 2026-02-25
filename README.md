@@ -13,8 +13,8 @@ The API serves the Blazor static files, so you open one local URL.
 ## Security behavior
 
 - Host and login are always derived from the form and restricted to Hetzner Storage Box format:
-  - Login: `<username>-sub<sub-id>`
-  - Host: `<username>-sub<sub-id>.your-storagebox.de`
+  - Login / username input: `<base-username>-sub<sub-id>`
+  - Host: `<base-username>-sub<sub-id>.your-storagebox.de`
   - Port: `23`
 - Passwords and passphrases are processed in memory only.
 - UI clears password/passphrase fields after each finished run (except while waiting for overwrite confirmation).
@@ -24,7 +24,7 @@ The API serves the Blazor static files, so you open one local URL.
 
 ## Workflow supported
 
-1. Fill in username, sub-id, password.
+1. Fill in username (for example `u123456-sub12`) and password.
 2. Choose either:
    - generate new key pair (`ed25519` / `ecdsa` / `rsa`), or
    - provide an existing public key.

@@ -5,9 +5,9 @@ namespace StorageBoxKeyTool.Tests.Domain;
 public sealed class StorageBoxTargetTests
 {
     [Fact]
-    public void DerivedProperties_AreComputedFromBaseUsernameAndSubId()
+    public void DerivedProperties_AreComputedFromLogin()
     {
-        var target = new StorageBoxTarget("u999999", 314);
+        var target = new StorageBoxTarget("u999999-sub314");
 
         Assert.Equal("u999999-sub314", target.Login);
         Assert.Equal("u999999-sub314.your-storagebox.de", target.Host);

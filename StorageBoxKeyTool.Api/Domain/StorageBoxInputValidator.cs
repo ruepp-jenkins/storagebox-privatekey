@@ -8,7 +8,7 @@ internal static partial class StorageBoxInputValidator
     private const int MaxPasswordLength = 256;
     private const int MaxCommentLength = 128;
 
-    public static StorageBoxTarget ValidateTarget(string username, int subId)
+    public static StorageBoxTarget ValidateTarget(string username)
     {
         if (string.IsNullOrWhiteSpace(username))
         {
@@ -18,15 +18,10 @@ internal static partial class StorageBoxInputValidator
         var normalizedUsername = username.Trim().ToLowerInvariant();
         if (!UsernameRegex().IsMatch(normalizedUsername))
         {
-            throw new ValidationException("Username must contain only lowercase letters and digits.");
+            throw new ValidationException("Username must use format <base>-sub<id> with lowercase letters and digits (for example u123456-sub12).");
         }
 
-        if (subId < 0 || subId > 999999)
-        {
-            throw new ValidationException("Sub-ID must be between 0 and 999999.");
-        }
-
-        return new StorageBoxTarget(normalizedUsername, subId);
+        return new StorageBoxTarget(normalizedUsername);
     }
 
     public static string ValidatePassword(string? password)
@@ -58,6 +53,6 @@ internal static partial class StorageBoxInputValidator
         return comment;
     }
 
-    [GeneratedRegex("^[a-z0-9]{1,32}$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^[a-z0-9]{1,32}-sub[0-9]{1,6}$", RegexOptions.CultureInvariant)]
     private static partial Regex UsernameRegex();
 }

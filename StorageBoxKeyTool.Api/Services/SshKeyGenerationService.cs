@@ -11,7 +11,7 @@ public sealed class SshKeyGenerationService
 
     public async Task<GenerateKeyResponse> GenerateAsync(GenerateKeyRequest request, CancellationToken cancellationToken)
     {
-        var target = StorageBoxInputValidator.ValidateTarget(request.Username, request.SubId);
+        var target = StorageBoxInputValidator.ValidateTarget(request.Username);
         var options = ValidateOptions(request.Algorithm, request.KeySize);
         var comment = StorageBoxInputValidator.BuildComment(target, request.Comment);
         var passphrase = request.Passphrase ?? string.Empty;

@@ -1,10 +1,8 @@
 namespace StorageBoxKeyTool.Api.Domain;
 
-public sealed record StorageBoxTarget(string BaseUsername, int SubId)
+public sealed record StorageBoxTarget(string Login)
 {
     public const int StorageBoxSshPort = 23;
-
-    public string Login => $"{BaseUsername}-sub{SubId}";
 
     public string Host => $"{Login}.your-storagebox.de";
 
