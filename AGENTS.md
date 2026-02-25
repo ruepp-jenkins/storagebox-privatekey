@@ -110,6 +110,7 @@ Agent guidance for working in this repository.
 - Catch specific exceptions first, broader exceptions last.
 - Do not return stack traces or raw sensitive internals in HTTP responses.
 - Preserve current behavior: validation -> check -> optional overwrite -> upload.
+- After upload, set `.ssh/authorized_keys` to permission `644` and do not modify `.ssh` directory permissions.
 - Keep host derivation constrained to Hetzner Storage Box format.
 - Keep fixed port `23` behavior unless explicit product change is requested.
 
