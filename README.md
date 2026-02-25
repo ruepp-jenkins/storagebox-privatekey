@@ -2,6 +2,10 @@
 
 Local web application to generate SSH keys and install the public key on a Hetzner Storage Box sub account via SSH/SFTP port `23`.
 
+## Disclaimer
+
+This project is provided as-is, without warranty. Use it at your own risk.
+
 ## Architecture
 
 - `StorageBoxKeyTool.Client`: Blazor WebAssembly UI (static frontend)
@@ -101,3 +105,7 @@ Run a single test:
 ```bash
 dotnet test StorageBoxKeyTool.Tests/StorageBoxKeyTool.Tests.csproj --filter "FullyQualifiedName~StorageBoxKeyTool.Tests.Domain.StorageBoxInputValidatorTests.ValidateTarget_WithValidInput_ReturnsNormalizedTarget"
 ```
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
