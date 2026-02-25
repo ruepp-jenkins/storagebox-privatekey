@@ -44,6 +44,30 @@ docker compose up --build
 
 Open: `http://localhost:8080`
 
+## Run with one container command
+
+If the image is available as `ruepp/storagebox-privatekey`, run it directly:
+
+```bash
+docker run --rm -p 127.0.0.1:8080:8080 ruepp/storagebox-privatekey
+```
+
+```bash
+podman run --rm -p 127.0.0.1:8080:8080 ruepp/storagebox-privatekey
+```
+
+Open: `http://localhost:8080`
+
+If you need to build that exact image name locally first:
+
+```bash
+docker build -t ruepp/storagebox-privatekey .
+```
+
+```bash
+podman build -t ruepp/storagebox-privatekey .
+```
+
 ## Run with .NET SDK
 
 ```bash

@@ -52,8 +52,10 @@ Agent guidance for working in this repository.
 ### Docker
 
 - `docker compose up --build`
-- `docker build -t storagebox-key-tool:test .`
-- `docker run --rm -p 127.0.0.1:8080:8080 storagebox-key-tool:test`
+- `docker build -t ruepp/storagebox-privatekey .`
+- `docker run --rm -p 127.0.0.1:8080:8080 ruepp/storagebox-privatekey`
+- `podman build -t ruepp/storagebox-privatekey .`
+- `podman run --rm -p 127.0.0.1:8080:8080 ruepp/storagebox-privatekey`
 
 ### Lint / formatting
 
