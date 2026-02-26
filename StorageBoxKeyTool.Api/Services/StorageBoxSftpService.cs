@@ -11,6 +11,8 @@ public sealed class StorageBoxSftpService
 {
     private const string SshDirectoryPath = ".ssh";
     private const string AuthorizedKeysPath = ".ssh/authorized_keys";
+    private const string RcloneDirectoryPath = "rclone";
+    private const string RcloneConfigPath = "rclone/rclone.conf";
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     public CheckKeyResponse CheckRemoteKey(CheckKeyRequest request)
@@ -91,10 +93,12 @@ public sealed class StorageBoxSftpService
             var normalizedExisting = PublicKeyUtility.NormalizeAuthorizedKeysContent(existingContent);
             if (string.Equals(normalizedExisting, normalizedDesired, StringComparison.Ordinal))
             {
+                var rcloneConfigCreated = request.CreateEmptyRcloneConfig && EnsureEmptyRcloneConfig(client);
+
                 return new UploadKeyResponse(
                     true,
-                    false,
-                    "Remote authorized_keys already matches the provided key.",
+                    rcloneConfigCreated,
+                    BuildIdenticalResponseMessage(request.CreateEmptyRcloneConfig, rcloneConfigCreated),
                     AuthorizedKeysPath,
                     fingerprint
                 );
@@ -117,10 +121,12 @@ public sealed class StorageBoxSftpService
             throw new InvalidOperationException("Upload verification failed. The remote file content does not match the expected public key.");
         }
 
+        var rcloneCreatedAfterUpload = request.CreateEmptyRcloneConfig && EnsureEmptyRcloneConfig(client);
+
         return new UploadKeyResponse(
             true,
             true,
-            "SSH public key uploaded successfully.",
+            BuildUploadResponseMessage(request.CreateEmptyRcloneConfig, rcloneCreatedAfterUpload),
             AuthorizedKeysPath,
             fingerprint
         );
@@ -169,6 +175,46 @@ public sealed class StorageBoxSftpService
         {
             client.CreateDirectory(SshDirectoryPath);
         }
+    }
+
+    private static bool EnsureEmptyRcloneConfig(SftpClient client)
+    {
+        if (!client.Exists(RcloneDirectoryPath))
+        {
+            client.CreateDirectory(RcloneDirectoryPath);
+        }
+
+        if (client.Exists(RcloneConfigPath))
+        {
+            return false;
+        }
+
+        UploadTextFile(client, RcloneConfigPath, string.Empty);
+        return true;
+    }
+
+    internal static string BuildIdenticalResponseMessage(bool createEmptyRcloneConfig, bool rcloneConfigCreated)
+    {
+        const string baseMessage = "Remote authorized_keys already matches the provided key.";
+
+        if (!createEmptyRcloneConfig || !rcloneConfigCreated)
+        {
+            return baseMessage;
+        }
+
+        return $"{baseMessage} Created empty rclone/rclone.conf.";
+    }
+
+    internal static string BuildUploadResponseMessage(bool createEmptyRcloneConfig, bool rcloneConfigCreated)
+    {
+        const string baseMessage = "SSH public key uploaded successfully.";
+
+        if (!createEmptyRcloneConfig || !rcloneConfigCreated)
+        {
+            return baseMessage;
+        }
+
+        return $"{baseMessage} Created empty rclone/rclone.conf.";
     }
 
     private static string DownloadTextFile(SftpClient client, string remotePath)

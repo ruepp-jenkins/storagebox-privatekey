@@ -32,13 +32,15 @@ The API serves the Blazor static files, so you open one local URL.
 2. Choose either:
    - generate new key pair (`ed25519` / `ecdsa` / `rsa`), or
    - provide an existing public key.
-3. Start process:
+3. Optional: enable creation of an empty `rclone/rclone.conf` file (created only if missing).
+4. Start process:
    - key generation (if selected)
    - remote check of `.ssh/authorized_keys`
    - if file differs: explicit overwrite confirmation required, then replace the file (delete + re-upload)
    - upload `authorized_keys` without changing permissions on files or folders
-4. Success/error is shown and logged step-by-step in UI.
-5. Reset button starts over from scratch.
+   - if selected, ensure `rclone/rclone.conf` exists as an empty file
+5. Success/error is shown and logged step-by-step in UI.
+6. Reset button starts over from scratch.
 
 ## Run with Docker (recommended)
 

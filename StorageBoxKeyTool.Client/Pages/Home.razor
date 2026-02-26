@@ -119,6 +119,14 @@
                 </div>
             }
 
+            <div class="field-full options box">
+                <h3>Options</h3>
+                <label class="option-toggle">
+                    <InputCheckbox @bind-Value="Form.CreateEmptyRcloneConfig" />
+                    <span>Create empty <code>rclone/rclone.conf</code> (for restic/backrest via rclone).</span>
+                </label>
+            </div>
+
             <div class="derived box">
                 <h3>Derived Storage Box values</h3>
                 <dl>
@@ -344,6 +352,13 @@
 
             if (checkResponse.State == RemoteKeyState.Identical)
             {
+                if (Form.CreateEmptyRcloneConfig)
+                {
+                    AddLog("Options", "Remote authorized_keys already matches. Applying selected options.", ProcessLogLevel.Info);
+                    await UploadAsync(overwrite: false);
+                    return;
+                }
+
                 SuccessMessage = "Remote authorized_keys already matches your key. Nothing to overwrite.";
                 AddLog("Done", SuccessMessage, ProcessLogLevel.Success);
                 ClearSensitiveFields();
@@ -422,13 +437,18 @@
             throw new InvalidOperationException("No public key is available for upload.");
         }
 
-        AddLog("Upload", "Uploading key to remote .ssh/authorized_keys.", ProcessLogLevel.Info);
+        var uploadLogMessage = Form.CreateEmptyRcloneConfig
+            ? "Uploading key to remote .ssh/authorized_keys and ensuring rclone/rclone.conf exists."
+            : "Uploading key to remote .ssh/authorized_keys.";
+        AddLog("Upload", uploadLogMessage, ProcessLogLevel.Info);
+
         var uploadResponse = await ApiClient.UploadRemoteKeyAsync(
             new UploadKeyRequest(
                 Form.Username.Trim().ToLowerInvariant(),
                 Form.Password,
                 PreparedPublicKey,
-                overwrite
+                overwrite,
+                Form.CreateEmptyRcloneConfig
             ),
             CancellationToken.None
         );

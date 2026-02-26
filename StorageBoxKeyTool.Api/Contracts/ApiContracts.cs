@@ -45,7 +45,8 @@ public sealed record UploadKeyRequest(
     string Username,
     string Password,
     string PublicKey,
-    bool Overwrite
+    bool Overwrite,
+    bool CreateEmptyRcloneConfig
 );
 
 public sealed record UploadKeyResponse(

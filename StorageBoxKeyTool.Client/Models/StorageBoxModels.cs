@@ -43,6 +43,8 @@ public sealed class StorageBoxFormModel : IValidatableObject
 
     public string? ProvidedPublicKey { get; set; }
 
+    public bool CreateEmptyRcloneConfig { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (KeyMode == KeyInputMode.UseExistingPublicKey && string.IsNullOrWhiteSpace(ProvidedPublicKey))
@@ -132,7 +134,8 @@ public sealed record UploadKeyRequest(
     string Username,
     string Password,
     string PublicKey,
-    bool Overwrite
+    bool Overwrite,
+    bool CreateEmptyRcloneConfig
 );
 
 public sealed record UploadKeyResponse(

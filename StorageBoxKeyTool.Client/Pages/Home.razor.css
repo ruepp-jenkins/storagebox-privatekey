@@ -139,6 +139,26 @@ input[type="file"]::file-selector-button:hover {
     accent-color: var(--accent-strong);
 }
 
+.options h3 {
+    margin-bottom: 0.55rem;
+}
+
+.option-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    background: var(--surface);
+    border: 1px solid var(--field-border);
+    border-radius: 12px;
+    padding: 0.55rem 0.75rem;
+    cursor: pointer;
+}
+
+.option-toggle input[type="checkbox"] {
+    margin-top: 0.2rem;
+    accent-color: var(--accent-strong);
+}
+
 .derived {
     grid-column: 1 / -1;
 }
