@@ -164,14 +164,18 @@
             <h2>Generated key pair</h2>
             <p class="warning-note">The private key is shown only in this browser session. Download and store it securely now.</p>
             <div class="key-grid">
-                <div>
-                    <label>Private key</label>
-                    <textarea readonly class="key-output">@GeneratedKey.PrivateKey</textarea>
+                <div class="key-output-panel">
+                    <ReadOnlyCopyBox
+                        Label="Private key"
+                        Value="@GeneratedKey.PrivateKey"
+                        Hint="Shown only in this browser session. Download and store it securely now." />
                     <button type="button" class="btn btn-secondary" @onclick="DownloadPrivateKeyAsync">Download private key</button>
                 </div>
-                <div>
-                    <label>Public key</label>
-                    <textarea readonly class="key-output">@GeneratedKey.PublicKey</textarea>
+                <div class="key-output-panel">
+                    <ReadOnlyCopyBox
+                        Label="Public key"
+                        Value="@GeneratedKey.PublicKey"
+                        Hint="This key is uploaded to remote authorized_keys." />
                     <button type="button" class="btn btn-secondary" @onclick="DownloadPublicKeyAsync">Download public key</button>
                 </div>
             </div>
