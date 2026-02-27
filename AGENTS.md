@@ -5,7 +5,7 @@ Agent guidance for working in this repository.
 ## 1) Project Overview
 
 - Repository type: .NET 9 solution with Blazor WebAssembly frontend + ASP.NET Core API backend.
-- Main goal: generate SSH keys and upload public keys to Hetzner Storage Box on SSH/SFTP port `23`.
+- Main goal: generate SSH keys and upload public keys to Hetzner Storage Box on SSH/SFTP port `23`, with optional backrest/restic-compatible setup.
 - Connection input uses a single Storage Box login in `<base-username>-sub<sub-id>` format (for example `u123456-sub12`).
 - Solution file: `StorageBoxKeyTool.sln`.
 - Primary documentation: `@README.md`.
@@ -109,8 +109,9 @@ Agent guidance for working in this repository.
 - Return structured error payloads (`ApiErrorResponse`) for failures.
 - Catch specific exceptions first, broader exceptions last.
 - Do not return stack traces or raw sensitive internals in HTTP responses.
-- Preserve current behavior: validation -> check -> optional overwrite -> upload.
-- Do not modify permissions on `.ssh` or `.ssh/authorized_keys`; only create/update file content.
+- Preserve current behavior for SSH upload: validation -> check -> optional overwrite -> upload.
+- Allow non-SSH option flow: when SSH upload is disabled, apply only selected compatibility options.
+- Do not modify permissions on `.ssh`, `.ssh/authorized_keys`, `.config/rclone`, or `.config/rclone/rclone.conf`; only create/update file content.
 - Keep host derivation constrained to Hetzner Storage Box format.
 - Keep fixed port `23` behavior unless explicit product change is requested.
 
@@ -140,6 +141,8 @@ Agent guidance for working in this repository.
 - Use strongly typed models for form state and API payloads.
 - Keep components responsive (desktop + mobile layouts).
 - Use scoped CSS (`.razor.css`) for component-specific styles.
+- Keep SSH key configuration grouped and hidden when SSH upload option is disabled.
+- Support optional custom root directory input (`/home` default, custom path must remain under `/home`).
 
 ## 12) Files to Avoid Editing Directly
 

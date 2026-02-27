@@ -43,10 +43,57 @@ public sealed class StorageBoxFormModel : IValidatableObject
 
     public string? ProvidedPublicKey { get; set; }
 
-    public bool CreateEmptyRcloneConfig { get; set; }
+    public bool UploadSshPublicKey { get; set; } = true;
+
+    public bool BackrestResticCompatible { get; set; }
+
+    public bool UseCustomRootDirectory { get; set; }
+
+    public string? RootDirectory { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (!UploadSshPublicKey && !BackrestResticCompatible)
+        {
+            yield return new ValidationResult(
+                "Enable at least one operation: upload SSH public key or backrest/restic compatibility.",
+                [nameof(UploadSshPublicKey), nameof(BackrestResticCompatible)]
+            );
+        }
+
+        if (UseCustomRootDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(RootDirectory))
+            {
+                yield return new ValidationResult(
+                    "Provide a custom root directory.",
+                    [nameof(RootDirectory)]
+                );
+            }
+            else
+            {
+                var normalizedRootDirectory = RootDirectory.Trim();
+                if (normalizedRootDirectory.Length > 1)
+                {
+                    normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
+                }
+
+                if (!string.Equals(normalizedRootDirectory, "/home", StringComparison.Ordinal)
+                    && !normalizedRootDirectory.StartsWith("/home/", StringComparison.Ordinal))
+                {
+                    yield return new ValidationResult(
+                        "Custom root directory must be /home or start with /home/.",
+                        [nameof(RootDirectory)]
+                    );
+                }
+            }
+        }
+
+        if (!UploadSshPublicKey)
+        {
+            yield break;
+        }
+
         if (KeyMode == KeyInputMode.UseExistingPublicKey && string.IsNullOrWhiteSpace(ProvidedPublicKey))
         {
             yield return new ValidationResult(
@@ -116,7 +163,9 @@ public sealed record GenerateKeyResponse(
 public sealed record CheckKeyRequest(
     string Username,
     string Password,
-    string PublicKey
+    string PublicKey,
+    bool BackrestResticCompatible,
+    string RootDirectory
 );
 
 public sealed record CheckKeyResponse(
@@ -133,9 +182,11 @@ public sealed record CheckKeyResponse(
 public sealed record UploadKeyRequest(
     string Username,
     string Password,
-    string PublicKey,
+    string? PublicKey,
     bool Overwrite,
-    bool CreateEmptyRcloneConfig
+    bool UploadSshPublicKey,
+    bool BackrestResticCompatible,
+    string RootDirectory
 );
 
 public sealed record UploadKeyResponse(

@@ -27,7 +27,9 @@ public sealed record GenerateKeyResponse(
 public sealed record CheckKeyRequest(
     string Username,
     string Password,
-    string PublicKey
+    string PublicKey,
+    bool BackrestResticCompatible,
+    string RootDirectory
 );
 
 public sealed record CheckKeyResponse(
@@ -44,9 +46,11 @@ public sealed record CheckKeyResponse(
 public sealed record UploadKeyRequest(
     string Username,
     string Password,
-    string PublicKey,
+    string? PublicKey,
     bool Overwrite,
-    bool CreateEmptyRcloneConfig
+    bool UploadSshPublicKey,
+    bool BackrestResticCompatible,
+    string RootDirectory
 );
 
 public sealed record UploadKeyResponse(

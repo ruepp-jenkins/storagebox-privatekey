@@ -1,6 +1,6 @@
 # Storage Box SSH Key Installer
 
-Local web application to generate SSH keys and install the public key on a Hetzner Storage Box sub account via SSH/SFTP port `23`.
+Local web application to generate SSH keys and install the public key on a Hetzner Storage Box sub account via SSH/SFTP port `23`, with optional backrest/restic-compatible setup.
 
 ## Disclaimer
 
@@ -29,16 +29,21 @@ The API serves the Blazor static files, so you open one local URL.
 ## Workflow supported
 
 1. Fill in username (for example `u123456-sub12`) and password.
-2. Choose either:
-   - generate new key pair (`ed25519` / `ecdsa` / `rsa`), or
-   - provide an existing public key.
-3. Optional: enable creation of an empty `rclone/rclone.conf` file (created only if missing).
+2. Choose operations in **Options**:
+   - `Upload SSH public key` (default enabled):
+     - choose key source (generate new pair or provide existing OpenSSH public key),
+     - upload/update `<root>/.ssh/authorized_keys`.
+   - `Backrest / restic compatible`:
+     - ensure `<root>/.config/rclone/rclone.conf` exists as an empty file (create only if missing),
+     - ensure an additional command-based SSH key line exists for restic via rclone.
+3. Optional: enable custom root directory (default is `/home`). Custom root must be `/home` or start with `/home/`.
 4. Start process:
-   - key generation (if selected)
-   - remote check of `.ssh/authorized_keys`
-   - if file differs: explicit overwrite confirmation required, then replace the file (delete + re-upload)
-   - upload `authorized_keys` without changing permissions on files or folders
-   - if selected, ensure `rclone/rclone.conf` exists as an empty file
+   - if SSH upload is enabled: remote check of `<root>/.ssh/authorized_keys`,
+   - if key config differs: explicit overwrite confirmation required,
+   - overwrite updates key material while preserving non-key lines where possible,
+   - if backrest/restic mode is enabled, the key entry includes:
+     - SSH2 public-key block (`---- BEGIN SSH2 PUBLIC KEY ----` ...),
+     - command line like `command="rclone serve restic --stdio <root>" <algorithm> <base64> <login>@<host>`.
 5. Success/error is shown and logged step-by-step in UI.
 6. Reset button starts over from scratch.
 

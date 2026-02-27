@@ -143,6 +143,11 @@ input[type="file"]::file-selector-button:hover {
     margin-bottom: 0.55rem;
 }
 
+.options {
+    display: grid;
+    gap: 0.6rem;
+}
+
 .option-toggle {
     display: flex;
     align-items: flex-start;
@@ -157,6 +162,20 @@ input[type="file"]::file-selector-button:hover {
 .option-toggle input[type="checkbox"] {
     margin-top: 0.2rem;
     accent-color: var(--accent-strong);
+}
+
+.custom-root {
+    margin-top: 0.2rem;
+}
+
+.ssh-key-config {
+    grid-column: 1 / -1;
+}
+
+.ssh-key-grid {
+    display: grid;
+    gap: 0.9rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .derived {
@@ -363,6 +382,7 @@ input[type="file"]::file-selector-button:hover {
 
 @media (max-width: 860px) {
     .form-grid,
+    .ssh-key-grid,
     .key-grid {
         grid-template-columns: 1fr;
     }

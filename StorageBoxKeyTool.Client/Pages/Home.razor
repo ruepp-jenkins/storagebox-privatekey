@@ -10,8 +10,8 @@
         <p class="eyebrow">Hetzner Storage Box</p>
         <h1>SSH Key Installer</h1>
         <p class="intro">
-            Create a new SSH key pair or use an existing public key, then install it to
-            <code>.ssh/authorized_keys</code> for your Storage Box sub account on port <code>23</code>.
+            Upload an SSH public key, optionally enable backrest/restic compatibility, and apply everything to
+            your Storage Box sub account on port <code>23</code>.
         </p>
     </header>
 
@@ -35,97 +35,126 @@
                 <ValidationMessage For="@(() => Form.Password)" />
             </div>
 
-            <div class="field field-full">
-                <label>Key source</label>
-                <InputRadioGroup @bind-Value="Form.KeyMode" class="mode-switch">
-                    <label class="mode-option">
-                        <InputRadio Value="KeyInputMode.GenerateNewKeyPair" />
-                        <span>Generate new SSH key pair</span>
-                    </label>
-                    <label class="mode-option">
-                        <InputRadio Value="KeyInputMode.UseExistingPublicKey" />
-                        <span>Use existing public key</span>
-                    </label>
-                </InputRadioGroup>
-            </div>
-
-            @if (Form.KeyMode == KeyInputMode.GenerateNewKeyPair)
-            {
-                <div class="field">
-                    <label for="algorithm">Algorithm</label>
-                    <InputSelect id="algorithm" class="field-input" @bind-Value="SelectedAlgorithm">
-                        <option value="ed25519">ed25519</option>
-                        <option value="ecdsa">ecdsa</option>
-                        <option value="rsa">rsa</option>
-                    </InputSelect>
-                </div>
-
-                @if (Form.Algorithm is "ecdsa" or "rsa")
-                {
-                    <div class="field">
-                        <label for="keySize">Key size</label>
-                        <InputSelect id="keySize" class="field-input" @bind-Value="Form.KeySize">
-                            @if (Form.Algorithm == "ecdsa")
-                            {
-                                <option value="256">256</option>
-                                <option value="384">384</option>
-                                <option value="521">521</option>
-                            }
-                            else
-                            {
-                                <option value="2048">2048</option>
-                                <option value="3072">3072</option>
-                                <option value="4096">4096</option>
-                                <option value="8192">8192</option>
-                            }
-                        </InputSelect>
-                        <ValidationMessage For="@(() => Form.KeySize)" />
-                    </div>
-                }
-
-                <div class="field">
-                    <label for="keyPassphrase">Key passphrase (optional)</label>
-                    <InputText id="keyPassphrase" type="password" class="field-input" @bind-Value="Form.KeyPassphrase" autocomplete="new-password" />
-                    <ValidationMessage For="@(() => Form.KeyPassphrase)" />
-                </div>
-
-                <div class="field">
-                    <label for="confirmKeyPassphrase">Confirm passphrase</label>
-                    <InputText id="confirmKeyPassphrase" type="password" class="field-input" @bind-Value="Form.ConfirmKeyPassphrase" autocomplete="new-password" />
-                    <ValidationMessage For="@(() => Form.ConfirmKeyPassphrase)" />
-                </div>
-
-                <div class="field field-full">
-                    <label for="keyComment">Key comment (optional)</label>
-                    <InputText id="keyComment" class="field-input" @bind-Value="Form.KeyComment" placeholder="Defaults to login@host" />
-                    <ValidationMessage For="@(() => Form.KeyComment)" />
-                </div>
-            }
-            else
-            {
-                <div class="field field-full">
-                    <label for="providedKey">Public key (OpenSSH, one line)</label>
-                    <InputTextArea id="providedKey" class="field-input key-input" @bind-Value="Form.ProvidedPublicKey" placeholder="ssh-ed25519 AAAAC3... user@host" />
-                    <ValidationMessage For="@(() => Form.ProvidedPublicKey)" />
-                </div>
-
-                <div class="field field-full">
-                    <label for="publicKeyUpload">Or load from file</label>
-                    <InputFile id="publicKeyUpload" OnChange="HandlePublicKeyUploadAsync" accept=".pub,text/plain" />
-                    @if (!string.IsNullOrWhiteSpace(UploadedPublicKeyFileName))
-                    {
-                        <p class="field-hint">Loaded file: <code>@UploadedPublicKeyFileName</code></p>
-                    }
-                </div>
-            }
-
             <div class="field-full options box">
                 <h3>Options</h3>
                 <label class="option-toggle">
-                    <InputCheckbox @bind-Value="Form.CreateEmptyRcloneConfig" />
-                    <span>Create empty <code>rclone/rclone.conf</code> (for restic/backrest via rclone).</span>
+                    <InputCheckbox @bind-Value="Form.UploadSshPublicKey" />
+                    <span>Upload SSH public key</span>
                 </label>
+
+                <label class="option-toggle">
+                    <InputCheckbox @bind-Value="Form.BackrestResticCompatible" />
+                    <span>Backrest / restic compatible (ensure <code>.config/rclone/rclone.conf</code> and restic command entry).</span>
+                </label>
+
+                <label class="option-toggle">
+                    <InputCheckbox @bind-Value="Form.UseCustomRootDirectory" />
+                    <span>Use custom root directory (default <code>/home</code>).</span>
+                </label>
+
+                @if (Form.UseCustomRootDirectory)
+                {
+                    <div class="field custom-root">
+                        <label for="rootDirectory">Custom root directory</label>
+                        <InputText id="rootDirectory" class="field-input" @bind-Value="Form.RootDirectory" placeholder="/home/my-folder" />
+                        <p class="field-hint">Must be <code>/home</code> or start with <code>/home/</code>.</p>
+                        <ValidationMessage For="@(() => Form.RootDirectory)" />
+                    </div>
+                }
             </div>
+
+            @if (Form.UploadSshPublicKey)
+            {
+                <div class="field-full box ssh-key-config">
+                    <h3>SSH key configuration</h3>
+
+                    <div class="ssh-key-grid">
+                        <div class="field field-full">
+                            <label>Key source</label>
+                            <InputRadioGroup @bind-Value="Form.KeyMode" class="mode-switch">
+                                <label class="mode-option">
+                                    <InputRadio Value="KeyInputMode.GenerateNewKeyPair" />
+                                    <span>Generate new SSH key pair</span>
+                                </label>
+                                <label class="mode-option">
+                                    <InputRadio Value="KeyInputMode.UseExistingPublicKey" />
+                                    <span>Use existing public key</span>
+                                </label>
+                            </InputRadioGroup>
+                        </div>
+
+                        @if (Form.KeyMode == KeyInputMode.GenerateNewKeyPair)
+                        {
+                            <div class="field">
+                                <label for="algorithm">Algorithm</label>
+                                <InputSelect id="algorithm" class="field-input" @bind-Value="SelectedAlgorithm">
+                                    <option value="ed25519">ed25519</option>
+                                    <option value="ecdsa">ecdsa</option>
+                                    <option value="rsa">rsa</option>
+                                </InputSelect>
+                            </div>
+
+                            @if (Form.Algorithm is "ecdsa" or "rsa")
+                            {
+                                <div class="field">
+                                    <label for="keySize">Key size</label>
+                                    <InputSelect id="keySize" class="field-input" @bind-Value="Form.KeySize">
+                                        @if (Form.Algorithm == "ecdsa")
+                                        {
+                                            <option value="256">256</option>
+                                            <option value="384">384</option>
+                                            <option value="521">521</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="2048">2048</option>
+                                            <option value="3072">3072</option>
+                                            <option value="4096">4096</option>
+                                            <option value="8192">8192</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => Form.KeySize)" />
+                                </div>
+                            }
+
+                            <div class="field">
+                                <label for="keyPassphrase">Key passphrase (optional)</label>
+                                <InputText id="keyPassphrase" type="password" class="field-input" @bind-Value="Form.KeyPassphrase" autocomplete="new-password" />
+                                <ValidationMessage For="@(() => Form.KeyPassphrase)" />
+                            </div>
+
+                            <div class="field">
+                                <label for="confirmKeyPassphrase">Confirm passphrase</label>
+                                <InputText id="confirmKeyPassphrase" type="password" class="field-input" @bind-Value="Form.ConfirmKeyPassphrase" autocomplete="new-password" />
+                                <ValidationMessage For="@(() => Form.ConfirmKeyPassphrase)" />
+                            </div>
+
+                            <div class="field field-full">
+                                <label for="keyComment">Key comment (optional)</label>
+                                <InputText id="keyComment" class="field-input" @bind-Value="Form.KeyComment" placeholder="Defaults to login@host" />
+                                <ValidationMessage For="@(() => Form.KeyComment)" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="field field-full">
+                                <label for="providedKey">Public key (OpenSSH, one line)</label>
+                                <InputTextArea id="providedKey" class="field-input key-input" @bind-Value="Form.ProvidedPublicKey" placeholder="ssh-ed25519 AAAAC3... user@host" />
+                                <ValidationMessage For="@(() => Form.ProvidedPublicKey)" />
+                            </div>
+
+                            <div class="field field-full">
+                                <label for="publicKeyUpload">Or load from file</label>
+                                <InputFile id="publicKeyUpload" OnChange="HandlePublicKeyUploadAsync" accept=".pub,text/plain" />
+                                @if (!string.IsNullOrWhiteSpace(UploadedPublicKeyFileName))
+                                {
+                                    <p class="field-hint">Loaded file: <code>@UploadedPublicKeyFileName</code></p>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
 
             <div class="derived box">
                 <h3>Derived Storage Box values</h3>
@@ -142,6 +171,26 @@
                         <dt>Port</dt>
                         <dd><code>23</code></dd>
                     </div>
+                    <div>
+                        <dt>Root directory</dt>
+                        <dd><code>@EffectiveRootDirectory</code></dd>
+                    </div>
+
+                    @if (Form.UploadSshPublicKey)
+                    {
+                        <div>
+                            <dt>SSH destination</dt>
+                            <dd><code>@AuthorizedKeysPathPreview</code></dd>
+                        </div>
+                    }
+
+                    @if (Form.BackrestResticCompatible)
+                    {
+                        <div>
+                            <dt>rclone config destination</dt>
+                            <dd><code>@RcloneConfigPathPreview</code></dd>
+                        </div>
+                    }
                 </dl>
             </div>
 
@@ -298,6 +347,12 @@
         }
     }
 
+    private string EffectiveRootDirectory => ResolveRootDirectory();
+
+    private string AuthorizedKeysPathPreview => $"{EffectiveRootDirectory}/.ssh/authorized_keys";
+
+    private string RcloneConfigPathPreview => $"{EffectiveRootDirectory}/.config/rclone/rclone.conf";
+
     protected override void OnInitialized()
     {
         ApplyAlgorithmDefaults();
@@ -335,41 +390,50 @@
         {
             AddLog("Validate", "Input accepted. Preparing workflow.", ProcessLogLevel.Info);
 
-            var publicKey = await ResolvePublicKeyAsync();
-            PreparedPublicKey = publicKey;
-
-            AddLog("Check", "Connecting to Storage Box and checking remote authorized_keys.", ProcessLogLevel.Info);
-            var checkResponse = await ApiClient.CheckRemoteKeyAsync(
-                new CheckKeyRequest(
-                    Form.Username.Trim().ToLowerInvariant(),
-                    Form.Password,
-                    publicKey
-                ),
-                CancellationToken.None
-            );
-
-            LastCheck = checkResponse;
-
-            if (checkResponse.State == RemoteKeyState.Identical)
+            if (Form.UploadSshPublicKey)
             {
-                if (Form.CreateEmptyRcloneConfig)
+                var publicKey = await ResolvePublicKeyAsync();
+                PreparedPublicKey = publicKey;
+
+                AddLog("Check", "Connecting to Storage Box and checking remote authorized_keys.", ProcessLogLevel.Info);
+                var checkResponse = await ApiClient.CheckRemoteKeyAsync(
+                    new CheckKeyRequest(
+                        Form.Username.Trim().ToLowerInvariant(),
+                        Form.Password,
+                        publicKey,
+                        Form.BackrestResticCompatible,
+                        EffectiveRootDirectory
+                    ),
+                    CancellationToken.None
+                );
+
+                LastCheck = checkResponse;
+
+                if (checkResponse.State == RemoteKeyState.Identical)
                 {
-                    AddLog("Options", "Remote authorized_keys already matches. Applying selected options.", ProcessLogLevel.Info);
-                    await UploadAsync(overwrite: false);
+                    if (Form.BackrestResticCompatible)
+                    {
+                        AddLog("Options", "Remote SSH key already matches. Applying selected options.", ProcessLogLevel.Info);
+                        await UploadAsync(overwrite: false);
+                        return;
+                    }
+
+                    SuccessMessage = "Remote SSH public key already matches your key. Nothing to overwrite.";
+                    AddLog("Done", SuccessMessage, ProcessLogLevel.Success);
+                    ClearSensitiveFields();
                     return;
                 }
 
-                SuccessMessage = "Remote authorized_keys already matches your key. Nothing to overwrite.";
-                AddLog("Done", SuccessMessage, ProcessLogLevel.Success);
-                ClearSensitiveFields();
-                return;
+                if (checkResponse.State == RemoteKeyState.Different)
+                {
+                    AwaitingOverwrite = true;
+                    AddLog("Conflict", "Remote authorized_keys differs. Confirm overwrite to continue.", ProcessLogLevel.Warning);
+                    return;
+                }
             }
-
-            if (checkResponse.State == RemoteKeyState.Different)
+            else
             {
-                AwaitingOverwrite = true;
-                AddLog("Conflict", "Remote authorized_keys differs. Confirm overwrite to continue.", ProcessLogLevel.Warning);
-                return;
+                AddLog("Check", "SSH public key upload is disabled. Skipping authorized_keys check.", ProcessLogLevel.Info);
             }
 
             await UploadAsync(overwrite: false);
@@ -432,23 +496,22 @@
 
     private async Task UploadAsync(bool overwrite)
     {
-        if (string.IsNullOrWhiteSpace(PreparedPublicKey))
+        if (Form.UploadSshPublicKey && string.IsNullOrWhiteSpace(PreparedPublicKey))
         {
             throw new InvalidOperationException("No public key is available for upload.");
         }
 
-        var uploadLogMessage = Form.CreateEmptyRcloneConfig
-            ? "Uploading key to remote .ssh/authorized_keys and ensuring rclone/rclone.conf exists."
-            : "Uploading key to remote .ssh/authorized_keys.";
-        AddLog("Upload", uploadLogMessage, ProcessLogLevel.Info);
+        AddLog("Upload", BuildUploadLogMessage(), ProcessLogLevel.Info);
 
         var uploadResponse = await ApiClient.UploadRemoteKeyAsync(
             new UploadKeyRequest(
                 Form.Username.Trim().ToLowerInvariant(),
                 Form.Password,
-                PreparedPublicKey,
+                Form.UploadSshPublicKey ? PreparedPublicKey : null,
                 overwrite,
-                Form.CreateEmptyRcloneConfig
+                Form.UploadSshPublicKey,
+                Form.BackrestResticCompatible,
+                EffectiveRootDirectory
             ),
             CancellationToken.None
         );
@@ -507,6 +570,46 @@
 
         ErrorMessage = $"{exception.Step}: {exception.Message}";
         AddLog("Error", $"{ErrorMessage}{detailSuffix}", ProcessLogLevel.Error);
+    }
+
+    private string BuildUploadLogMessage()
+    {
+        var operations = new List<string>();
+
+        if (Form.UploadSshPublicKey)
+        {
+            operations.Add("updating .ssh/authorized_keys");
+        }
+
+        if (Form.BackrestResticCompatible)
+        {
+            operations.Add("ensuring .config/rclone/rclone.conf");
+        }
+
+        if (operations.Count == 0)
+        {
+            return "No remote operations selected.";
+        }
+
+        return $"Applying remote changes: {string.Join(" and ", operations)}.";
+    }
+
+    private string ResolveRootDirectory()
+    {
+        if (!Form.UseCustomRootDirectory || string.IsNullOrWhiteSpace(Form.RootDirectory))
+        {
+            return "/home";
+        }
+
+        var normalizedRootDirectory = Form.RootDirectory.Trim();
+        if (normalizedRootDirectory.Length > 1)
+        {
+            normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
+        }
+
+        return string.IsNullOrWhiteSpace(normalizedRootDirectory)
+            ? "/home"
+            : normalizedRootDirectory;
     }
 
     private void ClearSensitiveFields()

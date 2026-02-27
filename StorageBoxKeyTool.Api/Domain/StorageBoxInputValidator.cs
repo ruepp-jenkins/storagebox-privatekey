@@ -5,6 +5,7 @@ namespace StorageBoxKeyTool.Api.Domain;
 
 internal static partial class StorageBoxInputValidator
 {
+    public const string DefaultRootDirectory = "/home";
     private const int MaxPasswordLength = 256;
     private const int MaxCommentLength = 128;
 
@@ -37,6 +38,32 @@ internal static partial class StorageBoxInputValidator
         }
 
         return password;
+    }
+
+    public static string ValidateRootDirectory(string? rootDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(rootDirectory))
+        {
+            return DefaultRootDirectory;
+        }
+
+        var normalizedRootDirectory = rootDirectory.Trim();
+        if (normalizedRootDirectory.Length > 1)
+        {
+            normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
+        }
+
+        if (string.Equals(normalizedRootDirectory, DefaultRootDirectory, StringComparison.Ordinal))
+        {
+            return normalizedRootDirectory;
+        }
+
+        if (!normalizedRootDirectory.StartsWith("/home/", StringComparison.Ordinal))
+        {
+            throw new ValidationException("Root directory must be /home or start with /home/.");
+        }
+
+        return normalizedRootDirectory;
     }
 
     public static string BuildComment(StorageBoxTarget target, string? requestedComment)

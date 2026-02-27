@@ -57,6 +57,31 @@ public sealed class StorageBoxInputValidatorTests
     }
 
     [Fact]
+    public void ValidateRootDirectory_WithNullInput_ReturnsDefault()
+    {
+        var result = StorageBoxInputValidator.ValidateRootDirectory(null);
+
+        Assert.Equal("/home", result);
+    }
+
+    [Fact]
+    public void ValidateRootDirectory_WithValidCustomInput_ReturnsNormalizedRoot()
+    {
+        var result = StorageBoxInputValidator.ValidateRootDirectory(" /home/backups/ ");
+
+        Assert.Equal("/home/backups", result);
+    }
+
+    [Theory]
+    [InlineData("/tmp")]
+    [InlineData("home/test")]
+    [InlineData("/home2")]
+    public void ValidateRootDirectory_WithInvalidInput_ThrowsValidationException(string rootDirectory)
+    {
+        Assert.Throws<ValidationException>(() => StorageBoxInputValidator.ValidateRootDirectory(rootDirectory));
+    }
+
+    [Fact]
     public void BuildComment_WithNullComment_ReturnsDerivedDefault()
     {
         var target = new StorageBoxTarget("u123456-sub42");
