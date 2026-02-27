@@ -78,24 +78,26 @@
                             </div>
                         }
 
-                        <div class="field-group">
-                            <EditableInputBox
-                                Id="keyPassphrase"
-                                Label="Key passphrase (optional)"
-                                @bind-Value="Form.KeyPassphrase"
-                                Type="password"
-                                Autocomplete="new-password" />
-                            <ValidationMessage For="@(() => Form.KeyPassphrase)" />
-                        </div>
+                        <div class="field-pair field-full">
+                            <div class="field-group">
+                                <EditableInputBox
+                                    Id="keyPassphrase"
+                                    Label="Key passphrase (optional)"
+                                    @bind-Value="Form.KeyPassphrase"
+                                    Type="password"
+                                    Autocomplete="new-password" />
+                                <ValidationMessage For="@(() => Form.KeyPassphrase)" />
+                            </div>
 
-                        <div class="field-group">
-                            <EditableInputBox
-                                Id="confirmKeyPassphrase"
-                                Label="Confirm passphrase"
-                                @bind-Value="Form.ConfirmKeyPassphrase"
-                                Type="password"
-                                Autocomplete="new-password" />
-                            <ValidationMessage For="@(() => Form.ConfirmKeyPassphrase)" />
+                            <div class="field-group">
+                                <EditableInputBox
+                                    Id="confirmKeyPassphrase"
+                                    Label="Confirm passphrase"
+                                    @bind-Value="Form.ConfirmKeyPassphrase"
+                                    Type="password"
+                                    Autocomplete="new-password" />
+                                <ValidationMessage For="@(() => Form.ConfirmKeyPassphrase)" />
+                            </div>
                         </div>
 
                         <div class="field-group field-full">

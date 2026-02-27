@@ -61,6 +61,12 @@ h3 {
     align-content: start;
 }
 
+.field-pair {
+    display: grid;
+    gap: 0.9rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .ssh-key-grid > .field {
     padding: 0.7rem;
     border-radius: 12px;
@@ -328,7 +334,8 @@ input[type="file"]::file-selector-button:hover {
 @media (max-width: 860px) {
     .form-grid,
     .ssh-key-grid,
-    .key-grid {
+    .key-grid,
+    .field-pair {
         grid-template-columns: 1fr;
     }
 }
