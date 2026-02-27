@@ -62,6 +62,17 @@
                 if (!copied) {
                     throw new Error("Clipboard copy failed.");
                 }
+            },
+
+            selectText: function (elementId) {
+                const element = document.getElementById(elementId);
+
+                if (!element || typeof element.select !== "function") {
+                    return;
+                }
+
+                element.focus();
+                element.select();
             }
         };
     </script>

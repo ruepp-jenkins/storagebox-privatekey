@@ -50,8 +50,7 @@
         <EditableInputBox
             Id="privateKeyPath"
             Label="Local private key path"
-            Value="@PrivateKeyPath"
-            ValueChanged="HandlePrivateKeyPathChanged"
+            @bind-Value="PrivateKeyPath"
             Placeholder="~/.ssh/id_ed25519"
             Hint="If your key is stored elsewhere, update this path." />
 
@@ -63,6 +62,8 @@
         <ReadOnlyCopyBox
             Label="Flags"
             Value="@ResticFlags"
+            Multiline="true"
+            Rows="3"
             EmptyDisplay="add username"
             CanCopy="@CanCopyResticFlags"
             Hint="@ResticFlagsHint" />
@@ -317,12 +318,6 @@
     private void HandleConnectionChanged()
     {
         _ = InvokeAsync(StateHasChanged);
-    }
-
-    private Task HandlePrivateKeyPathChanged(string value)
-    {
-        PrivateKeyPath = value;
-        return Task.CompletedTask;
     }
 
     public void Dispose()

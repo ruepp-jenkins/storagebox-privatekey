@@ -1,14 +1,19 @@
 .value-box {
     display: grid;
-    gap: 0.4rem;
-    padding: 0.7rem;
-    border-radius: 12px;
-    border: 1px solid var(--field-border);
-    background: color-mix(in oklab, var(--surface-soft) 90%, #101820);
+    gap: 0.5rem;
+    padding: 0.78rem;
+    border-radius: 14px;
+    border: 1px solid color-mix(in oklab, var(--field-border) 88%, #4a6571 12%);
+    background: linear-gradient(
+        160deg,
+        color-mix(in oklab, var(--surface-soft) 93%, #121c24),
+        color-mix(in oklab, var(--surface-soft) 86%, #0e171f)
+    );
 }
 
 .editable-box {
-    border-color: color-mix(in oklab, var(--accent) 48%, var(--field-border));
+    border-color: color-mix(in oklab, var(--accent) 42%, var(--field-border));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .value-box-header {
@@ -20,7 +25,9 @@
 }
 
 .value-input,
-.value-input:focus {
+.value-input:focus,
+.value-textarea,
+.value-textarea:focus {
     font: inherit;
 }
 
@@ -34,9 +41,18 @@
     box-sizing: border-box;
 }
 
+.value-textarea {
+    min-height: 6.5rem;
+    resize: vertical;
+}
+
 .value-input:focus {
     outline: 2px solid var(--focus-ring);
     border-color: var(--accent);
+}
+
+.value-input::placeholder {
+    color: color-mix(in oklab, var(--text-soft) 82%, transparent);
 }
 
 .value-hint {

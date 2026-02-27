@@ -78,29 +78,45 @@
                             </div>
                         }
 
-                        <div class="field">
-                            <label for="keyPassphrase">Key passphrase (optional)</label>
-                            <InputText id="keyPassphrase" type="password" class="field-input" @bind-Value="Form.KeyPassphrase" autocomplete="new-password" />
+                        <div class="field-group">
+                            <EditableInputBox
+                                Id="keyPassphrase"
+                                Label="Key passphrase (optional)"
+                                @bind-Value="Form.KeyPassphrase"
+                                Type="password"
+                                Autocomplete="new-password" />
                             <ValidationMessage For="@(() => Form.KeyPassphrase)" />
                         </div>
 
-                        <div class="field">
-                            <label for="confirmKeyPassphrase">Confirm passphrase</label>
-                            <InputText id="confirmKeyPassphrase" type="password" class="field-input" @bind-Value="Form.ConfirmKeyPassphrase" autocomplete="new-password" />
+                        <div class="field-group">
+                            <EditableInputBox
+                                Id="confirmKeyPassphrase"
+                                Label="Confirm passphrase"
+                                @bind-Value="Form.ConfirmKeyPassphrase"
+                                Type="password"
+                                Autocomplete="new-password" />
                             <ValidationMessage For="@(() => Form.ConfirmKeyPassphrase)" />
                         </div>
 
-                        <div class="field field-full">
-                            <label for="keyComment">Key comment (optional)</label>
-                            <InputText id="keyComment" class="field-input" @bind-Value="Form.KeyComment" placeholder="Defaults to login@host" />
+                        <div class="field-group field-full">
+                            <EditableInputBox
+                                Id="keyComment"
+                                Label="Key comment (optional)"
+                                @bind-Value="Form.KeyComment"
+                                Placeholder="Defaults to login@host" />
                             <ValidationMessage For="@(() => Form.KeyComment)" />
                         </div>
                     }
                     else
                     {
-                        <div class="field field-full">
-                            <label for="providedKey">Public key (OpenSSH, one line)</label>
-                            <InputTextArea id="providedKey" class="field-input key-input" @bind-Value="Form.ProvidedPublicKey" placeholder="ssh-ed25519 AAAAC3... user@host" />
+                        <div class="field-group field-full">
+                            <EditableInputBox
+                                Id="providedKey"
+                                Label="Public key (OpenSSH, one line)"
+                                @bind-Value="Form.ProvidedPublicKey"
+                                Multiline="true"
+                                Rows="5"
+                                Placeholder="ssh-ed25519 AAAAC3... user@host" />
                             <ValidationMessage For="@(() => Form.ProvidedPublicKey)" />
                         </div>
 
@@ -168,6 +184,8 @@
                     <ReadOnlyCopyBox
                         Label="Private key"
                         Value="@GeneratedKey.PrivateKey"
+                        Multiline="true"
+                        Rows="10"
                         Hint="Shown only in this browser session. Download and store it securely now." />
                     <button type="button" class="btn btn-secondary" @onclick="DownloadPrivateKeyAsync">Download private key</button>
                 </div>
@@ -175,6 +193,8 @@
                     <ReadOnlyCopyBox
                         Label="Public key"
                         Value="@GeneratedKey.PublicKey"
+                        Multiline="true"
+                        Rows="6"
                         Hint="This key is uploaded to remote authorized_keys." />
                     <button type="button" class="btn btn-secondary" @onclick="DownloadPublicKeyAsync">Download public key</button>
                 </div>

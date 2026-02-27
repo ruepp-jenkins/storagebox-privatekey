@@ -2,11 +2,34 @@
 
 <div class="value-box readonly-box">
     <div class="value-box-header">
-        <span class="value-label">@Label</span>
+        <label class="value-label" for="@_valueElementId">@Label</label>
     </div>
 
     <div class="value-row">
-        <div class="value-display @(Monospace ? "mono" : string.Empty)" title="@DisplayValue">@DisplayValue</div>
+        @if (UseMultiline)
+        {
+            <textarea
+                id="@_valueElementId"
+                class="value-display value-textarea @(Monospace ? "mono" : string.Empty)"
+                readonly
+                rows="@Rows"
+                title="@DisplayValue"
+                @onclick="SelectAllAsync"
+                @onfocus="SelectAllAsync">@DisplayValue</textarea>
+        }
+        else
+        {
+            <input
+                id="@_valueElementId"
+                class="value-display @(Monospace ? "mono" : string.Empty)"
+                type="text"
+                readonly
+                value="@DisplayValue"
+                title="@DisplayValue"
+                @onclick="SelectAllAsync"
+                @onfocus="SelectAllAsync" />
+        }
+
         <button type="button" class="copy-btn" @onclick="CopyAsync" disabled="@(!CanCopyValue)">Copy</button>
     </div>
 
@@ -24,6 +47,8 @@
 @code {
     private string? _feedback;
 
+    private readonly string _valueElementId = $"readonly_{Guid.NewGuid():N}";
+
     [Parameter]
     public required string Label { get; set; }
 
@@ -40,13 +65,32 @@
     public bool Monospace { get; set; } = true;
 
     [Parameter]
+    public bool Multiline { get; set; }
+
+    [Parameter]
+    public int Rows { get; set; } = 5;
+
+    [Parameter]
     public string? Hint { get; set; }
 
     private string DisplayValue => string.IsNullOrWhiteSpace(Value)
         ? EmptyDisplay
         : Value;
 
+    private bool UseMultiline => Multiline || DisplayValue.Contains('\n', StringComparison.Ordinal);
+
     private bool CanCopyValue => CanCopy && !string.IsNullOrWhiteSpace(Value);
+
+    private async Task SelectAllAsync()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("storageBoxKeyTool.selectText", _valueElementId);
+        }
+        catch (JSException)
+        {
+        }
+    }
 
     private async Task CopyAsync()
     {

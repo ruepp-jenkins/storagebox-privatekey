@@ -55,6 +55,12 @@ h3 {
     gap: 0.4rem;
 }
 
+.field-group {
+    display: grid;
+    gap: 0.35rem;
+    align-content: start;
+}
+
 .ssh-key-grid > .field {
     padding: 0.7rem;
     border-radius: 12px;
@@ -78,14 +84,11 @@ label {
 
 .field-input,
 .field-input:focus,
-textarea,
-textarea:focus,
 input[type="file"] {
     font: inherit;
 }
 
 .field-input,
-.key-input,
 input[type="file"] {
     width: 100%;
     border: 1px solid var(--field-border);
@@ -96,14 +99,12 @@ input[type="file"] {
     box-sizing: border-box;
 }
 
-.field-input:focus,
-.key-input:focus {
+.field-input:focus {
     outline: 2px solid var(--focus-ring);
     border-color: var(--accent);
 }
 
-.field-input::placeholder,
-.key-input::placeholder {
+.field-input::placeholder {
     color: color-mix(in oklab, var(--text-soft) 82%, transparent);
 }
 
@@ -120,11 +121,6 @@ input[type="file"]::file-selector-button {
 
 input[type="file"]::file-selector-button:hover {
     background: #2a3e48;
-}
-
-.key-input {
-    min-height: 7rem;
-    resize: vertical;
 }
 
 .mode-switch {
