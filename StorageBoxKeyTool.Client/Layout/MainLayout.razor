@@ -172,7 +172,7 @@
         {
             if (string.IsNullOrWhiteSpace(ConnectionState.Username))
             {
-                return "<username>-sub<sub-id>.your-storagebox.de";
+                return string.Empty;
             }
 
             return $"{ConnectionState.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
