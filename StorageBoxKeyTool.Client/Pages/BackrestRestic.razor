@@ -45,7 +45,7 @@
         <h2>Configure backrest / restic</h2>
         <p class="field-hint">Use these values in your repository settings after compatibility has been applied.</p>
 
-        <div class="field">
+        <div class="value-group">
             <label for="privateKeyPath">Local private key path</label>
             <input
                 id="privateKeyPath"
@@ -69,10 +69,10 @@
         <div class="value-group">
             <label for="resticFlags">Flags</label>
             <div class="copy-row">
-                <input id="resticFlags" class="field-input mono-input" value="@ResticFlags" readonly onclick="this.select()" />
-                <button type="button" class="btn btn-secondary copy-btn" @onclick="CopyResticFlagsAsync" disabled="@string.IsNullOrWhiteSpace(ResticFlags)">Copy</button>
+                <input id="resticFlags" class="field-input mono-input" value="@ResticFlagsDisplay" readonly onclick="this.select()" />
+                <button type="button" class="btn btn-secondary copy-btn" @onclick="CopyResticFlagsAsync" disabled="@(!CanCopyResticFlags)">Copy</button>
             </div>
-            @if (string.IsNullOrWhiteSpace(ResticFlags))
+            @if (!CanCopyResticFlags)
             {
                 <p class="field-hint">Enter a global username in the left navigation to generate flags.</p>
             }
@@ -190,6 +190,12 @@
     private string ResticFlags => string.IsNullOrWhiteSpace(DerivedLogin) || string.IsNullOrWhiteSpace(DerivedHost)
         ? string.Empty
         : $"-o rclone.program=\"ssh -p 23 {DerivedLogin}@{DerivedHost} -i {EffectivePrivateKeyPath}\"";
+
+    private string ResticFlagsDisplay => CanCopyResticFlags
+        ? ResticFlags
+        : "add username";
+
+    private bool CanCopyResticFlags => !string.IsNullOrWhiteSpace(ResticFlags);
 
     private string EffectivePrivateKeyPath => string.IsNullOrWhiteSpace(PrivateKeyPath)
         ? "~/.ssh/id_ed25519"
@@ -366,7 +372,7 @@
 
     private async Task CopyResticFlagsAsync()
     {
-        if (string.IsNullOrWhiteSpace(ResticFlags))
+        if (!CanCopyResticFlags)
         {
             return;
         }

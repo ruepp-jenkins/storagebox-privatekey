@@ -166,10 +166,41 @@
     font-weight: 600;
 }
 
-.connection-host code {
-    width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
+.host-copy-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.mono-input {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.copy-host-btn {
+    border: 1px solid #33505d;
+    border-radius: 10px;
+    background: #22333d;
+    color: #d9e8ed;
+    padding: 0.45rem 0.7rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.copy-host-btn:hover:enabled {
+    background: #2a3e48;
+}
+
+.copy-host-btn:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+}
+
+.connection-copy-feedback {
+    margin: 0;
+    color: var(--success);
+    font-size: 0.82rem;
 }
 
 .nav-input,
@@ -212,5 +243,9 @@
 
     .nav-copy {
         display: none;
+    }
+
+    .host-copy-row {
+        grid-template-columns: 1fr;
     }
 }
