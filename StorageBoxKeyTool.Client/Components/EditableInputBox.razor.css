@@ -12,22 +12,11 @@
 }
 
 .value-box-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.6rem;
+    display: block;
 }
 
 .value-box-header label {
     font-weight: 600;
-}
-
-.value-badge {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: color-mix(in oklab, var(--accent) 74%, white 8%);
-    font-weight: 700;
 }
 
 .value-input,
