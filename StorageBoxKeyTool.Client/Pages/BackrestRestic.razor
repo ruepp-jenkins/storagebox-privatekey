@@ -37,7 +37,13 @@
 
                 <div class="field">
                     <label for="privateKeyPath">Local private key path</label>
-                    <InputText id="privateKeyPath" class="field-input" @bind-Value="PrivateKeyPath" @bind-Value:event="oninput" placeholder="~/.ssh/id_ed25519" />
+                    <input
+                        id="privateKeyPath"
+                        type="text"
+                        class="field-input"
+                        value="@PrivateKeyPath"
+                        @oninput="HandlePrivateKeyPathInput"
+                        placeholder="~/.ssh/id_ed25519" />
                     <p class="field-hint">If your key is stored elsewhere, update this path.</p>
                 </div>
 
@@ -318,6 +324,11 @@
     private void HandleConnectionChanged()
     {
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void HandlePrivateKeyPathInput(ChangeEventArgs eventArgs)
+    {
+        PrivateKeyPath = eventArgs.Value?.ToString() ?? string.Empty;
     }
 
     public void Dispose()
