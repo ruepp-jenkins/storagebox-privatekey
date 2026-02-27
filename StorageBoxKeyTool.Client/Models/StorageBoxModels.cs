@@ -35,15 +35,8 @@ public sealed class SftpKeyFormModel : IValidatableObject
 
     public string? ProvidedPublicKey { get; set; }
 
-    public string RootDirectory { get; set; } = "/home";
-
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        foreach (var validationResult in RootDirectoryValidation.Validate(RootDirectory, nameof(RootDirectory)))
-        {
-            yield return validationResult;
-        }
-
         if (KeyMode == KeyInputMode.UseExistingPublicKey && string.IsNullOrWhiteSpace(ProvidedPublicKey))
         {
             yield return new ValidationResult(
@@ -95,46 +88,9 @@ public sealed class SftpKeyFormModel : IValidatableObject
 
 public sealed class BackrestResticFormModel : IValidatableObject
 {
-    public string RootDirectory { get; set; } = "/home";
-
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        foreach (var validationResult in RootDirectoryValidation.Validate(RootDirectory, nameof(RootDirectory)))
-        {
-            yield return validationResult;
-        }
-    }
-}
-
-internal static class RootDirectoryValidation
-{
-    public static IEnumerable<ValidationResult> Validate(string? rootDirectory, string memberName)
-    {
-        if (string.IsNullOrWhiteSpace(rootDirectory))
-        {
-            yield return new ValidationResult(
-                "Root directory is required.",
-                [memberName]
-            );
-            yield break;
-        }
-
-        var normalizedRootDirectory = rootDirectory.Trim();
-        if (normalizedRootDirectory.Length > 1)
-        {
-            normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
-        }
-
-        if (string.Equals(normalizedRootDirectory, "/home", StringComparison.Ordinal)
-            || normalizedRootDirectory.StartsWith("/home/", StringComparison.Ordinal))
-        {
-            yield break;
-        }
-
-        yield return new ValidationResult(
-            "Custom root directory must be /home or start with /home/.",
-            [memberName]
-        );
+        yield break;
     }
 }
 

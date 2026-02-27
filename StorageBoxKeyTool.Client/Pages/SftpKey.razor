@@ -26,13 +26,6 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="validation-summary" />
 
-            <div class="field field-full box">
-                <label for="rootDirectory">Root directory</label>
-                <InputText id="rootDirectory" class="field-input" @bind-Value="Form.RootDirectory" placeholder="/home" />
-                <p class="field-hint">Must be <code>/home</code> or start with <code>/home/</code>.</p>
-                <ValidationMessage For="@(() => Form.RootDirectory)" />
-            </div>
-
             <div class="field field-full box ssh-key-config">
                 <h3>SSH key configuration</h3>
 
@@ -243,9 +236,9 @@
         }
     }
 
-    private string EffectiveRootDirectory => ResolveRootDirectory();
+    private const string DefaultRootDirectory = "/home";
 
-    private string AuthorizedKeysPathPreview => $"{EffectiveRootDirectory}/.ssh/authorized_keys";
+    private string AuthorizedKeysPathPreview => $"{DefaultRootDirectory}/.ssh/authorized_keys";
 
     protected override void OnInitialized()
     {
@@ -299,7 +292,7 @@
                     username,
                     password,
                     publicKey,
-                    EffectiveRootDirectory
+                    DefaultRootDirectory
                 ),
                 CancellationToken.None
             );
@@ -399,7 +392,7 @@
                 password,
                 PreparedPublicKey,
                 overwrite,
-                EffectiveRootDirectory
+                DefaultRootDirectory
             ),
             CancellationToken.None
         );
@@ -458,24 +451,6 @@
 
         ErrorMessage = $"{exception.Step}: {exception.Message}";
         AddLog("Error", $"{ErrorMessage}{detailSuffix}", ProcessLogLevel.Error);
-    }
-
-    private string ResolveRootDirectory()
-    {
-        if (string.IsNullOrWhiteSpace(Form.RootDirectory))
-        {
-            return "/home";
-        }
-
-        var normalizedRootDirectory = Form.RootDirectory.Trim();
-        if (normalizedRootDirectory.Length > 1)
-        {
-            normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
-        }
-
-        return string.IsNullOrWhiteSpace(normalizedRootDirectory)
-            ? "/home"
-            : normalizedRootDirectory;
     }
 
     private void ClearSensitiveFields()

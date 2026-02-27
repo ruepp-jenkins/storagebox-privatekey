@@ -147,7 +147,7 @@ Agent guidance for working in this repository.
 - Keep global connection inputs (username/password) in the left navigation and reuse them across workflows.
 - Keep workflow-specific UI isolated per navigation entry (do not mix actions between tabs/pages).
 - In backrest/restic flow, pre-check must fail fast when no SSH key login is configured and provide a clear path to the `sFTP key` entry.
-- Support root directory input with `/home` default; custom path must remain under `/home`.
+- Keep root directory fixed to `/home` in the UI workflows.
 - Show a prominent warning banner when the app is accessed from non-local/non-private hosts.
 
 ## 12) Files to Avoid Editing Directly

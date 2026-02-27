@@ -42,25 +42,23 @@ Global connection credentials are configured once in the left navigation and reu
 
 ### sFTP key
 
-1. Set root directory (`/home` default, path must be `/home` or start with `/home/`).
-2. Choose key source:
+1. Choose key source:
    - generate a new key pair (`ed25519` / `ecdsa` / `rsa`), or
    - provide an existing OpenSSH public key.
-3. Start process:
-   - remote check of `<root>/.ssh/authorized_keys`,
+2. Start process:
+   - remote check of `/home/.ssh/authorized_keys`,
    - if key differs: explicit overwrite confirmation required,
    - upload/update only SSH key content (preserving unrelated lines where possible).
 
 ### backrest / restic
 
-1. Set root directory (`/home` default, path must be `/home` or start with `/home/`).
-2. Pre-check runs first:
-   - if no SSH key login exists in `<root>/.ssh/authorized_keys`, the workflow errors immediately and points to the `sFTP key` tab.
-3. If pre-check passes, apply compatibility setup:
-   - ensure `<root>/.config/rclone/rclone.conf` exists (created only if missing),
-   - update `<root>/.ssh/authorized_keys` to include:
+1. Pre-check runs first:
+   - if no SSH key login exists in `/home/.ssh/authorized_keys`, the workflow errors immediately and points to the `sFTP key` tab.
+2. If pre-check passes, apply compatibility setup:
+   - ensure `/home/.config/rclone/rclone.conf` exists (created only if missing),
+   - update `/home/.ssh/authorized_keys` to include:
      - SSH2 public-key block (`---- BEGIN SSH2 PUBLIC KEY ----` ...),
-     - command line like `command="rclone serve restic --stdio <root>" <algorithm> <base64> <login>@<host>`.
+     - command line like `command="rclone serve restic --stdio /home" <algorithm> <base64> <login>@<host>`.
 
 Success/error is shown and logged step-by-step in UI. Reset buttons start each workflow from scratch.
 

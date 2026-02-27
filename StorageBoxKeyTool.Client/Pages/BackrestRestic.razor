@@ -25,13 +25,6 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="validation-summary" />
 
-            <div class="field field-full box">
-                <label for="rootDirectory">Root directory</label>
-                <InputText id="rootDirectory" class="field-input" @bind-Value="Form.RootDirectory" placeholder="/home" />
-                <p class="field-hint">Must be <code>/home</code> or start with <code>/home/</code>.</p>
-                <ValidationMessage For="@(() => Form.RootDirectory)" />
-            </div>
-
             <div class="actions field-full">
                 <button type="submit" class="btn btn-primary" disabled="@IsBusy">
                     @(IsBusy ? "Running..." : "Apply compatibility")
@@ -78,7 +71,7 @@
             }
             else
             {
-                <p class="field-hint">Root in use: <code>@EffectiveRootDirectory</code>.</p>
+                <p class="field-hint">Root in use: <code>@DefaultRootDirectory</code>.</p>
             }
         </div>
 
@@ -183,9 +176,9 @@
         }
     }
 
-    private string EffectiveRootDirectory => ResolveRootDirectory();
+    private const string DefaultRootDirectory = "/home";
 
-    private string RcloneConfigPathPreview => $"{EffectiveRootDirectory}/.config/rclone/rclone.conf";
+    private string RcloneConfigPathPreview => $"{DefaultRootDirectory}/.config/rclone/rclone.conf";
 
     private string ResticFlags => string.IsNullOrWhiteSpace(DerivedLogin) || string.IsNullOrWhiteSpace(DerivedHost)
         ? string.Empty
@@ -246,7 +239,7 @@
                 new CheckSshLoginRequest(
                     username,
                     password,
-                    EffectiveRootDirectory
+                    DefaultRootDirectory
                 ),
                 CancellationToken.None
             );
@@ -265,7 +258,7 @@
                 new ApplyBackrestResticRequest(
                     username,
                     password,
-                    EffectiveRootDirectory
+                    DefaultRootDirectory
                 ),
                 CancellationToken.None
             );
@@ -306,24 +299,6 @@
         NeedsSftpSetup = exception.Message.Contains("sFTP key tab", StringComparison.OrdinalIgnoreCase)
             || exception.Message.Contains("No SSH key login is configured", StringComparison.OrdinalIgnoreCase);
         AddLog("Error", $"{ErrorMessage}{detailSuffix}", ProcessLogLevel.Error);
-    }
-
-    private string ResolveRootDirectory()
-    {
-        if (string.IsNullOrWhiteSpace(Form.RootDirectory))
-        {
-            return "/home";
-        }
-
-        var normalizedRootDirectory = Form.RootDirectory.Trim();
-        if (normalizedRootDirectory.Length > 1)
-        {
-            normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
-        }
-
-        return string.IsNullOrWhiteSpace(normalizedRootDirectory)
-            ? "/home"
-            : normalizedRootDirectory;
     }
 
     private bool TryGetConnection(out string username, out string password)
