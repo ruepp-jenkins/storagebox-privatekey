@@ -1,0 +1,69 @@
+@using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="value-box editable-box">
+    <div class="value-box-header">
+        <label for="@Id">@Label</label>
+    </div>
+
+    <select id="@Id" class="value-input value-select" value="@Value" @onchange="HandleChange">
+        @ChildContent
+    </select>
+
+    @if (!string.IsNullOrWhiteSpace(Hint))
+    {
+        <p class="value-hint">@Hint</p>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    private EditContext? CascadedEditContext { get; set; }
+
+    [Parameter]
+    public required string Id { get; set; }
+
+    [Parameter]
+    public required string Label { get; set; }
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public Expression<Func<string?>>? ValueExpression { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string? Hint { get; set; }
+
+    private FieldIdentifier _fieldIdentifier;
+
+    private bool _hasFieldIdentifier;
+
+    protected override void OnParametersSet()
+    {
+        if (ValueExpression is null)
+        {
+            _hasFieldIdentifier = false;
+            return;
+        }
+
+        _fieldIdentifier = FieldIdentifier.Create(ValueExpression);
+        _hasFieldIdentifier = true;
+    }
+
+    private async Task HandleChange(ChangeEventArgs eventArgs)
+    {
+        await ValueChanged.InvokeAsync(eventArgs.Value?.ToString() ?? string.Empty);
+
+        if (_hasFieldIdentifier && CascadedEditContext is not null)
+        {
+            CascadedEditContext.NotifyFieldChanged(_fieldIdentifier);
+        }
+    }
+}

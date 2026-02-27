@@ -46,13 +46,12 @@
 
                     @if (Form.KeyMode == KeyInputMode.GenerateNewKeyPair)
                     {
-                        <div class="field">
-                            <label for="algorithm">Algorithm</label>
-                            <InputSelect id="algorithm" class="field-input" @bind-Value="SelectedAlgorithm">
+                        <div class="field-group">
+                            <EditableSelectBox Id="algorithm" Label="Algorithm" @bind-Value="SelectedAlgorithm">
                                 <option value="ed25519">ed25519</option>
                                 <option value="ecdsa">ecdsa</option>
                                 <option value="rsa">rsa</option>
-                            </InputSelect>
+                            </EditableSelectBox>
                         </div>
 
                         @if (Form.Algorithm is "ecdsa" or "rsa")
