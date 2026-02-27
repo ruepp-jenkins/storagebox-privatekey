@@ -154,6 +154,24 @@
     font-weight: 600;
 }
 
+.connection-host {
+    display: grid;
+    gap: 0.3rem;
+    margin-top: 0.1rem;
+}
+
+.connection-host span {
+    font-size: 0.83rem;
+    color: var(--text-soft);
+    font-weight: 600;
+}
+
+.connection-host code {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
 .nav-input,
 .nav-input:focus {
     font: inherit;

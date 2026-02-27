@@ -62,6 +62,11 @@
                     @oninput="HandlePasswordInput"
                     autocomplete="current-password" />
             </div>
+
+            <div class="connection-host">
+                <span>Hostname in use</span>
+                <code>@DerivedHost</code>
+            </div>
         </section>
     </aside>
 
@@ -159,5 +164,18 @@
     private void HandlePasswordInput(ChangeEventArgs eventArgs)
     {
         ConnectionState.Password = eventArgs.Value?.ToString() ?? string.Empty;
+    }
+
+    private string DerivedHost
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(ConnectionState.Username))
+            {
+                return "<username>-sub<sub-id>.your-storagebox.de";
+            }
+
+            return $"{ConnectionState.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
+        }
     }
 }
