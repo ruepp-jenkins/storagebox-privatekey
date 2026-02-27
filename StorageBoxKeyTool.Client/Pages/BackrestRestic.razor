@@ -2,6 +2,7 @@
 @using System.Text.RegularExpressions
 @inject StorageBoxApiClient ApiClient
 @inject StorageBoxConnectionState ConnectionState
+@inject IJSRuntime JsRuntime
 @implements IDisposable
 
 <PageTitle>Hetzner StorageBox Helper - backrest / restic</PageTitle>
@@ -31,33 +32,6 @@
                 <ValidationMessage For="@(() => Form.RootDirectory)" />
             </div>
 
-            <div class="field-full box connection-guide">
-                <h3>Connection values for backrest / restic</h3>
-                <p class="field-hint">After compatibility is applied, use these values in your backrest/restic repository configuration.</p>
-
-                <div class="field">
-                    <label for="privateKeyPath">Local private key path</label>
-                    <input
-                        id="privateKeyPath"
-                        type="text"
-                        class="field-input"
-                        value="@PrivateKeyPath"
-                        @oninput="HandlePrivateKeyPathInput"
-                        placeholder="~/.ssh/id_ed25519" />
-                    <p class="field-hint">If your key is stored elsewhere, update this path.</p>
-                </div>
-
-                <ul>
-                    <li>Repository URI: <code>rclone:</code></li>
-                    <li>Flags: <code>@ResticFlags</code></li>
-                </ul>
-
-                <p class="field-hint">
-                    <code>rclone:</code> is correct. Connection details are supplied via the flags.
-                    Root in use: <code>@EffectiveRootDirectory</code>.
-                </p>
-            </div>
-
             <div class="actions field-full">
                 <button type="submit" class="btn btn-primary" disabled="@IsBusy">
                     @(IsBusy ? "Running..." : "Apply compatibility")
@@ -65,6 +39,53 @@
                 <button type="button" class="btn btn-secondary" @onclick="ResetAll" disabled="@IsBusy">Reset / Start over</button>
             </div>
         </EditForm>
+    </section>
+
+    <section class="panel config-panel">
+        <h2>Configure backrest / restic</h2>
+        <p class="field-hint">Use these values in your repository settings after compatibility has been applied.</p>
+
+        <div class="field">
+            <label for="privateKeyPath">Local private key path</label>
+            <input
+                id="privateKeyPath"
+                type="text"
+                class="field-input"
+                value="@PrivateKeyPath"
+                @oninput="HandlePrivateKeyPathInput"
+                placeholder="~/.ssh/id_ed25519" />
+            <p class="field-hint">If your key is stored elsewhere, update this path.</p>
+        </div>
+
+        <div class="value-group">
+            <label for="repositoryUri">Repository URI</label>
+            <div class="copy-row">
+                <input id="repositoryUri" class="field-input mono-input" value="@RepositoryUri" readonly onclick="this.select()" />
+                <button type="button" class="btn btn-secondary copy-btn" @onclick="CopyRepositoryUriAsync">Copy</button>
+            </div>
+            <p class="field-hint"><code>rclone:</code> is correct; connection details are supplied via the flags.</p>
+        </div>
+
+        <div class="value-group">
+            <label for="resticFlags">Flags</label>
+            <div class="copy-row">
+                <input id="resticFlags" class="field-input mono-input" value="@ResticFlags" readonly onclick="this.select()" />
+                <button type="button" class="btn btn-secondary copy-btn" @onclick="CopyResticFlagsAsync" disabled="@string.IsNullOrWhiteSpace(ResticFlags)">Copy</button>
+            </div>
+            @if (string.IsNullOrWhiteSpace(ResticFlags))
+            {
+                <p class="field-hint">Enter a global username in the left navigation to generate flags.</p>
+            }
+            else
+            {
+                <p class="field-hint">Root in use: <code>@EffectiveRootDirectory</code>.</p>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(CopyFeedback))
+        {
+            <p class="copy-feedback">@CopyFeedback</p>
+        }
     </section>
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
@@ -130,7 +151,11 @@
 
     private string? SuccessMessage { get; set; }
 
+    private string? CopyFeedback { get; set; }
+
     private string PrivateKeyPath { get; set; } = "~/.ssh/id_ed25519";
+
+    private const string RepositoryUri = "rclone:";
 
     private string DerivedLogin
     {
@@ -138,7 +163,7 @@
         {
             if (string.IsNullOrWhiteSpace(ConnectionState.Username))
             {
-                return "<username>-sub<sub-id>";
+                return string.Empty;
             }
 
             return ConnectionState.Username.Trim().ToLowerInvariant();
@@ -151,7 +176,7 @@
         {
             if (string.IsNullOrWhiteSpace(ConnectionState.Username))
             {
-                return "<username>-sub<sub-id>.your-storagebox.de";
+                return string.Empty;
             }
 
             return $"{ConnectionState.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
@@ -162,7 +187,9 @@
 
     private string RcloneConfigPathPreview => $"{EffectiveRootDirectory}/.config/rclone/rclone.conf";
 
-    private string ResticFlags => $"-o rclone.program=\"ssh -p 23 {DerivedLogin}@{DerivedHost} -i {EffectivePrivateKeyPath}\"";
+    private string ResticFlags => string.IsNullOrWhiteSpace(DerivedLogin) || string.IsNullOrWhiteSpace(DerivedHost)
+        ? string.Empty
+        : $"-o rclone.program=\"ssh -p 23 {DerivedLogin}@{DerivedHost} -i {EffectivePrivateKeyPath}\"";
 
     private string EffectivePrivateKeyPath => string.IsNullOrWhiteSpace(PrivateKeyPath)
         ? "~/.ssh/id_ed25519"
@@ -200,6 +227,7 @@
         IsBusy = true;
         ErrorMessage = null;
         SuccessMessage = null;
+        CopyFeedback = null;
         NeedsSftpSetup = false;
         Logs.Clear();
 
@@ -331,6 +359,34 @@
         PrivateKeyPath = eventArgs.Value?.ToString() ?? string.Empty;
     }
 
+    private async Task CopyRepositoryUriAsync()
+    {
+        await CopyTextAsync(RepositoryUri, "Repository URI copied.");
+    }
+
+    private async Task CopyResticFlagsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ResticFlags))
+        {
+            return;
+        }
+
+        await CopyTextAsync(ResticFlags, "Flags copied.");
+    }
+
+    private async Task CopyTextAsync(string value, string successMessage)
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("storageBoxKeyTool.copyText", value);
+            CopyFeedback = successMessage;
+        }
+        catch (JSException)
+        {
+            CopyFeedback = "Copy failed in this browser context. Please copy manually.";
+        }
+    }
+
     public void Dispose()
     {
         ConnectionState.Changed -= HandleConnectionChanged;
@@ -342,6 +398,7 @@
         NeedsSftpSetup = false;
         ErrorMessage = null;
         SuccessMessage = null;
+        CopyFeedback = null;
         PrivateKeyPath = "~/.ssh/id_ed25519";
         Logs.Clear();
 

@@ -37,6 +37,31 @@
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
+            },
+
+            copyText: async function (content) {
+                const text = content ?? "";
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return;
+                }
+
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.setAttribute("readonly", "readonly");
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                const copied = document.execCommand("copy");
+                document.body.removeChild(textArea);
+
+                if (!copied) {
+                    throw new Error("Clipboard copy failed.");
+                }
             }
         };
     </script>
