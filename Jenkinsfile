@@ -25,7 +25,7 @@ pipeline {
             labelRestriction: 'urltrigger',
             entries: [
                 URLTriggerEntry(
-                    url: 'https://mcr.microsoft.com/v2/dotnet/sdk/manifests/9.0-alpine',
+                    url: 'https://mcr.microsoft.com/v2/dotnet/sdk/manifests/9.0',
                     contentTypes: [
                         JsonContent(
                             [
@@ -35,7 +35,7 @@ pipeline {
                     ]
                 ),
                 URLTriggerEntry(
-                    url: 'https://mcr.microsoft.com/v2/dotnet/aspnet/manifests/9.0-alpine',
+                    url: 'https://mcr.microsoft.com/v2/dotnet/aspnet/manifests/9.0',
                     contentTypes: [
                         JsonContent(
                             [
