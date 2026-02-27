@@ -174,35 +174,11 @@ input[type="file"]::file-selector-button:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.derived {
-    grid-column: 1 / -1;
-}
-
 .box {
     background: var(--surface-soft);
     border: 1px solid var(--field-border);
     border-radius: 14px;
     padding: 0.95rem;
-}
-
-.derived dl {
-    margin: 0;
-    display: grid;
-    gap: 0.6rem;
-}
-
-.derived dl div {
-    display: grid;
-    gap: 0.15rem;
-}
-
-.derived dt {
-    font-size: 0.9rem;
-    color: var(--text-soft);
-}
-
-.derived dd {
-    margin: 0;
 }
 
 .actions {

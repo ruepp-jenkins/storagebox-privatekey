@@ -1,5 +1,4 @@
 @page "/backrest-restic"
-@using System.Net
 @using System.Text.RegularExpressions
 @inject StorageBoxApiClient ApiClient
 @inject StorageBoxConnectionState ConnectionState
@@ -32,34 +31,25 @@
                 <ValidationMessage For="@(() => Form.RootDirectory)" />
             </div>
 
-            <div class="derived box field-full">
-                <h3>Derived Storage Box values</h3>
-                <dl>
-                    <div>
-                        <dt>Login</dt>
-                        <dd><code>@DerivedLogin</code></dd>
-                    </div>
-                    <div>
-                        <dt>Host</dt>
-                        <dd><code>@DerivedHost</code></dd>
-                    </div>
-                    <div>
-                        <dt>Port</dt>
-                        <dd><code>23</code></dd>
-                    </div>
-                    <div>
-                        <dt>Root directory</dt>
-                        <dd><code>@EffectiveRootDirectory</code></dd>
-                    </div>
-                    <div>
-                        <dt>SSH destination</dt>
-                        <dd><code>@AuthorizedKeysPathPreview</code></dd>
-                    </div>
-                    <div>
-                        <dt>rclone config destination</dt>
-                        <dd><code>@RcloneConfigPathPreview</code></dd>
-                    </div>
-                </dl>
+            <div class="field-full box connection-guide">
+                <h3>Connection values for backrest / restic</h3>
+                <p class="field-hint">After compatibility is applied, use these values in your backrest/restic repository configuration.</p>
+
+                <div class="field">
+                    <label for="privateKeyPath">Local private key path</label>
+                    <InputText id="privateKeyPath" class="field-input" @bind-Value="PrivateKeyPath" @bind-Value:event="oninput" placeholder="~/.ssh/id_ed25519" />
+                    <p class="field-hint">If your key is stored elsewhere, update this path.</p>
+                </div>
+
+                <ul>
+                    <li>Repository URI: <code>rclone:</code></li>
+                    <li>Flags: <code>@ResticFlags</code></li>
+                </ul>
+
+                <p class="field-hint">
+                    <code>rclone:</code> is correct. Connection details are supplied via the flags.
+                    Root in use: <code>@EffectiveRootDirectory</code>.
+                </p>
             </div>
 
             <div class="actions field-full">
@@ -134,6 +124,8 @@
 
     private string? SuccessMessage { get; set; }
 
+    private string PrivateKeyPath { get; set; } = "~/.ssh/id_ed25519";
+
     private string DerivedLogin
     {
         get
@@ -162,9 +154,13 @@
 
     private string EffectiveRootDirectory => ResolveRootDirectory();
 
-    private string AuthorizedKeysPathPreview => $"{EffectiveRootDirectory}/.ssh/authorized_keys";
-
     private string RcloneConfigPathPreview => $"{EffectiveRootDirectory}/.config/rclone/rclone.conf";
+
+    private string ResticFlags => $"-o rclone.program=\"ssh -p 23 {DerivedLogin}@{DerivedHost} -i {EffectivePrivateKeyPath}\"";
+
+    private string EffectivePrivateKeyPath => string.IsNullOrWhiteSpace(PrivateKeyPath)
+        ? "~/.ssh/id_ed25519"
+        : PrivateKeyPath.Trim();
 
     protected override void OnInitialized()
     {
@@ -335,6 +331,7 @@
         NeedsSftpSetup = false;
         ErrorMessage = null;
         SuccessMessage = null;
+        PrivateKeyPath = "~/.ssh/id_ed25519";
         Logs.Clear();
 
         Form = new BackrestResticFormModel();

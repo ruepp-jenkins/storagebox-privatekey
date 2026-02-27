@@ -118,10 +118,6 @@ label {
     margin-top: 0.2rem;
 }
 
-.derived {
-    grid-column: 1 / -1;
-}
-
 .box {
     background: var(--surface-soft);
     border: 1px solid var(--field-border);
@@ -129,24 +125,11 @@ label {
     padding: 0.95rem;
 }
 
-.derived dl {
-    margin: 0;
+.connection-guide ul {
+    margin: 0.8rem 0;
+    padding-left: 1.2rem;
     display: grid;
-    gap: 0.6rem;
-}
-
-.derived dl div {
-    display: grid;
-    gap: 0.15rem;
-}
-
-.derived dt {
-    font-size: 0.9rem;
-    color: var(--text-soft);
-}
-
-.derived dd {
-    margin: 0;
+    gap: 0.5rem;
 }
 
 .actions {

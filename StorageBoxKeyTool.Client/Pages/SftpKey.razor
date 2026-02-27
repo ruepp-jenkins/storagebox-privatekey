@@ -123,32 +123,6 @@
                 </div>
             </div>
 
-            <div class="derived box field-full">
-                <h3>Derived Storage Box values</h3>
-                <dl>
-                    <div>
-                        <dt>Login</dt>
-                        <dd><code>@DerivedLogin</code></dd>
-                    </div>
-                    <div>
-                        <dt>Host</dt>
-                        <dd><code>@DerivedHost</code></dd>
-                    </div>
-                    <div>
-                        <dt>Port</dt>
-                        <dd><code>23</code></dd>
-                    </div>
-                    <div>
-                        <dt>Root directory</dt>
-                        <dd><code>@EffectiveRootDirectory</code></dd>
-                    </div>
-                    <div>
-                        <dt>SSH destination</dt>
-                        <dd><code>@AuthorizedKeysPathPreview</code></dd>
-                    </div>
-                </dl>
-            </div>
-
             <div class="actions field-full">
                 <button type="submit" class="btn btn-primary" disabled="@IsBusy">
                     @(IsBusy ? "Running..." : "Start process")
@@ -266,32 +240,6 @@
         {
             Form.Algorithm = value;
             ApplyAlgorithmDefaults();
-        }
-    }
-
-    private string DerivedLogin
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(ConnectionState.Username))
-            {
-                return "<username>-sub<sub-id>";
-            }
-
-            return ConnectionState.Username.Trim().ToLowerInvariant();
-        }
-    }
-
-    private string DerivedHost
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(ConnectionState.Username))
-            {
-                return "<username>-sub<sub-id>.your-storagebox.de";
-            }
-
-            return $"{ConnectionState.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
         }
     }
 
