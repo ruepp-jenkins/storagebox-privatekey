@@ -187,6 +187,16 @@ public sealed class PublicKeyUtilityTests
     }
 
     [Fact]
+    public void TryExtractPrimaryPublicKey_WithCommandPrefixedEntry_ReturnsNormalizedKey()
+    {
+        const string content = "command=\"rclone serve restic --stdio /home\" ssh-ed25519 QUJD user@host\n";
+
+        var result = PublicKeyUtility.TryExtractPrimaryPublicKey(content);
+
+        Assert.Equal("ssh-ed25519 QUJD user@host", result);
+    }
+
+    [Fact]
     public void TryComputePrimaryFingerprint_WithNoValidKey_ReturnsNull()
     {
         const string content = "# comment only\nnot-a-key\n";

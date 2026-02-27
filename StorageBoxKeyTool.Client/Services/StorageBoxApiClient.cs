@@ -21,6 +21,16 @@ public sealed class StorageBoxApiClient(HttpClient httpClient)
         return PostAsync<UploadKeyResponse>("api/storagebox/upload", request, cancellationToken);
     }
 
+    public Task<CheckSshLoginResponse> CheckSshLoginAsync(CheckSshLoginRequest request, CancellationToken cancellationToken)
+    {
+        return PostAsync<CheckSshLoginResponse>("api/storagebox/backrest/check-ssh-login", request, cancellationToken);
+    }
+
+    public Task<ApplyBackrestResticResponse> ApplyBackrestResticAsync(ApplyBackrestResticRequest request, CancellationToken cancellationToken)
+    {
+        return PostAsync<ApplyBackrestResticResponse>("api/storagebox/backrest/apply", request, cancellationToken);
+    }
+
     private async Task<TResponse> PostAsync<TResponse>(string relativePath, object payload, CancellationToken cancellationToken)
     {
         using var response = await httpClient.PostAsJsonAsync(relativePath, payload, cancellationToken);

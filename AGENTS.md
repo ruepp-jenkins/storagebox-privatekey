@@ -5,7 +5,7 @@ Agent guidance for working in this repository.
 ## 1) Project Overview
 
 - Repository type: .NET 9 solution with Blazor WebAssembly frontend + ASP.NET Core API backend.
-- Main goal: generate SSH keys and upload public keys to Hetzner Storage Box on SSH/SFTP port `23`, with optional backrest/restic-compatible setup.
+- Main goal: provide two workflows for Hetzner Storage Box on SSH/SFTP port `23`: sFTP key management and backrest/restic compatibility setup.
 - Connection input uses a single Storage Box login in `<base-username>-sub<sub-id>` format (for example `u123456-sub12`).
 - Solution file: `StorageBoxKeyTool.sln`.
 - Primary documentation: `@README.md`.
@@ -109,8 +109,9 @@ Agent guidance for working in this repository.
 - Return structured error payloads (`ApiErrorResponse`) for failures.
 - Catch specific exceptions first, broader exceptions last.
 - Do not return stack traces or raw sensitive internals in HTTP responses.
-- Preserve current behavior for SSH upload: validation -> check -> optional overwrite -> upload.
-- Allow non-SSH option flow: when SSH upload is disabled, apply only selected compatibility options.
+- Keep workflows separated:
+  - sFTP key flow: validation -> check -> optional overwrite -> upload.
+  - backrest/restic flow: pre-check for existing SSH key login -> apply compatibility changes.
 - Do not modify permissions on `.ssh`, `.ssh/authorized_keys`, `.config/rclone`, or `.config/rclone/rclone.conf`; only create/update file content.
 - Keep host derivation constrained to Hetzner Storage Box format.
 - Keep fixed port `23` behavior unless explicit product change is requested.
@@ -141,7 +142,9 @@ Agent guidance for working in this repository.
 - Use strongly typed models for form state and API payloads.
 - Keep components responsive (desktop + mobile layouts).
 - Use scoped CSS (`.razor.css`) for component-specific styles.
-- Keep SSH key configuration grouped and hidden when SSH upload option is disabled.
+- Keep the left navigation with two entries (`sFTP key`, `backrest / restic`).
+- Keep workflow-specific UI isolated per navigation entry (do not mix actions between tabs/pages).
+- In backrest/restic flow, pre-check must fail fast when no SSH key login is configured and provide a clear path to the `sFTP key` entry.
 - Support optional custom root directory input (`/home` default, custom path must remain under `/home`).
 
 ## 12) Files to Avoid Editing Directly

@@ -1,0 +1,347 @@
+@page "/backrest-restic"
+@using System.Net
+@inject StorageBoxApiClient ApiClient
+
+<PageTitle>Hetzner StorageBox Helper - backrest / restic</PageTitle>
+
+<div class="tool-shell">
+    <header class="tool-header panel">
+        <p class="eyebrow">Hetzner StorageBox Helper</p>
+        <h1>backrest / restic</h1>
+        <p class="intro">
+            Configure command-based SSH login for restic via rclone and ensure
+            <code>@RcloneConfigPathPreview</code> exists.
+        </p>
+    </header>
+
+    <section class="panel">
+        <h2>Connection setup</h2>
+
+        <EditForm EditContext="@_editContext" OnSubmit="HandleSubmitAsync" class="form-grid" autocomplete="off">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="validation-summary" />
+
+            <div class="field">
+                <label for="username">Storage Box username</label>
+                <InputText id="username" class="field-input" @bind-Value="Form.Username" autocomplete="username" placeholder="u123456-sub12" />
+                <ValidationMessage For="@(() => Form.Username)" />
+            </div>
+
+            <div class="field">
+                <label for="password">Storage Box password</label>
+                <InputText id="password" type="password" class="field-input" @bind-Value="Form.Password" autocomplete="current-password" />
+                <ValidationMessage For="@(() => Form.Password)" />
+            </div>
+
+            <div class="field-full options box">
+                <h3>Paths</h3>
+                <label class="option-toggle">
+                    <InputCheckbox @bind-Value="Form.UseCustomRootDirectory" />
+                    <span>Use custom root directory (default <code>/home</code>).</span>
+                </label>
+
+                @if (Form.UseCustomRootDirectory)
+                {
+                    <div class="field custom-root">
+                        <label for="rootDirectory">Custom root directory</label>
+                        <InputText id="rootDirectory" class="field-input" @bind-Value="Form.RootDirectory" placeholder="/home/my-folder" />
+                        <p class="field-hint">Must be <code>/home</code> or start with <code>/home/</code>.</p>
+                        <ValidationMessage For="@(() => Form.RootDirectory)" />
+                    </div>
+                }
+            </div>
+
+            <div class="derived box field-full">
+                <h3>Derived Storage Box values</h3>
+                <dl>
+                    <div>
+                        <dt>Login</dt>
+                        <dd><code>@DerivedLogin</code></dd>
+                    </div>
+                    <div>
+                        <dt>Host</dt>
+                        <dd><code>@DerivedHost</code></dd>
+                    </div>
+                    <div>
+                        <dt>Port</dt>
+                        <dd><code>23</code></dd>
+                    </div>
+                    <div>
+                        <dt>Root directory</dt>
+                        <dd><code>@EffectiveRootDirectory</code></dd>
+                    </div>
+                    <div>
+                        <dt>SSH destination</dt>
+                        <dd><code>@AuthorizedKeysPathPreview</code></dd>
+                    </div>
+                    <div>
+                        <dt>rclone config destination</dt>
+                        <dd><code>@RcloneConfigPathPreview</code></dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="actions field-full">
+                <button type="submit" class="btn btn-primary" disabled="@IsBusy">
+                    @(IsBusy ? "Running..." : "Apply compatibility")
+                </button>
+                <button type="button" class="btn btn-secondary" @onclick="ResetAll" disabled="@IsBusy">Reset / Start over</button>
+            </div>
+        </EditForm>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <section class="panel status error">
+            <h2>Error</h2>
+            <p>@ErrorMessage</p>
+            @if (NeedsSftpSetup)
+            {
+                <p>
+                    Continue in the
+                    <NavLink class="inline-link" href="/sftp-key">sFTP key</NavLink>
+                    tab first.
+                </p>
+            }
+        </section>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+    {
+        <section class="panel status success">
+            <h2>Success</h2>
+            <p>@SuccessMessage</p>
+        </section>
+    }
+
+    <section class="panel">
+        <h2>Process log</h2>
+        @if (Logs.Count == 0)
+        {
+            <p class="field-hint">No operations yet.</p>
+        }
+        else
+        {
+            <ol class="log-list">
+                @foreach (var log in Logs)
+                {
+                    <li class="@($"log-entry {log.CssClass}")">
+                        <div class="log-meta">
+                            <span>@log.Timestamp.ToLocalTime().ToString("HH:mm:ss")</span>
+                            <strong>@log.Step</strong>
+                        </div>
+                        <p>@log.Message</p>
+                    </li>
+                }
+            </ol>
+        }
+    </section>
+</div>
+
+@code {
+    private BackrestResticFormModel Form { get; set; } = new();
+
+    private EditContext _editContext = default!;
+
+    private List<ProcessLogEntry> Logs { get; } = [];
+
+    private bool IsBusy { get; set; }
+
+    private bool NeedsSftpSetup { get; set; }
+
+    private string? ErrorMessage { get; set; }
+
+    private string? SuccessMessage { get; set; }
+
+    private string DerivedLogin
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Form.Username))
+            {
+                return "<username>-sub<sub-id>";
+            }
+
+            return Form.Username.Trim().ToLowerInvariant();
+        }
+    }
+
+    private string DerivedHost
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Form.Username))
+            {
+                return "<username>-sub<sub-id>.your-storagebox.de";
+            }
+
+            return $"{Form.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
+        }
+    }
+
+    private string EffectiveRootDirectory => ResolveRootDirectory();
+
+    private string AuthorizedKeysPathPreview => $"{EffectiveRootDirectory}/.ssh/authorized_keys";
+
+    private string RcloneConfigPathPreview => $"{EffectiveRootDirectory}/.config/rclone/rclone.conf";
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(Form);
+    }
+
+    private async Task HandleSubmitAsync(EditContext _)
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        if (!_editContext.Validate())
+        {
+            AddLog("Validate", "Please fix the highlighted form errors before starting.", ProcessLogLevel.Warning);
+            return;
+        }
+
+        await RunWorkflowAsync();
+    }
+
+    private async Task RunWorkflowAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+        NeedsSftpSetup = false;
+        Logs.Clear();
+
+        try
+        {
+            AddLog("Validate", "Input accepted. Preparing workflow.", ProcessLogLevel.Info);
+            AddLog("Pre-check", "Checking whether SSH key login already exists.", ProcessLogLevel.Info);
+
+            var precheckResponse = await ApiClient.CheckSshLoginAsync(
+                new CheckSshLoginRequest(
+                    Form.Username.Trim().ToLowerInvariant(),
+                    Form.Password,
+                    EffectiveRootDirectory
+                ),
+                CancellationToken.None
+            );
+
+            if (!precheckResponse.HasSshPublicKey)
+            {
+                NeedsSftpSetup = true;
+                ErrorMessage = $"No SSH key login is configured at '{precheckResponse.DestinationPath}'.";
+                AddLog("Pre-check", "Missing SSH key login. Configure it first in the sFTP key tab.", ProcessLogLevel.Error);
+                return;
+            }
+
+            AddLog("Apply", "Applying backrest/restic compatibility setup.", ProcessLogLevel.Info);
+
+            var applyResponse = await ApiClient.ApplyBackrestResticAsync(
+                new ApplyBackrestResticRequest(
+                    Form.Username.Trim().ToLowerInvariant(),
+                    Form.Password,
+                    EffectiveRootDirectory
+                ),
+                CancellationToken.None
+            );
+
+            SuccessMessage = applyResponse.Message;
+
+            if (applyResponse.Changed)
+            {
+                AddLog("Done", $"Success. {applyResponse.Message}", ProcessLogLevel.Success);
+            }
+            else
+            {
+                AddLog("Done", "Backrest/restic setup already matched the desired state.", ProcessLogLevel.Success);
+            }
+        }
+        catch (ApiClientException ex)
+        {
+            HandleApiError(ex);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+            AddLog("Error", ex.Message, ProcessLogLevel.Error);
+        }
+        finally
+        {
+            ClearSensitiveFields();
+            IsBusy = false;
+        }
+    }
+
+    private void HandleApiError(ApiClientException exception)
+    {
+        var detailSuffix = string.IsNullOrWhiteSpace(exception.Detail)
+            ? string.Empty
+            : $" Detail: {exception.Detail}";
+
+        ErrorMessage = $"{exception.Step}: {exception.Message}";
+        NeedsSftpSetup = exception.Message.Contains("sFTP key tab", StringComparison.OrdinalIgnoreCase)
+            || exception.Message.Contains("No SSH key login is configured", StringComparison.OrdinalIgnoreCase);
+        AddLog("Error", $"{ErrorMessage}{detailSuffix}", ProcessLogLevel.Error);
+    }
+
+    private string ResolveRootDirectory()
+    {
+        if (!Form.UseCustomRootDirectory || string.IsNullOrWhiteSpace(Form.RootDirectory))
+        {
+            return "/home";
+        }
+
+        var normalizedRootDirectory = Form.RootDirectory.Trim();
+        if (normalizedRootDirectory.Length > 1)
+        {
+            normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
+        }
+
+        return string.IsNullOrWhiteSpace(normalizedRootDirectory)
+            ? "/home"
+            : normalizedRootDirectory;
+    }
+
+    private void ClearSensitiveFields()
+    {
+        Form.Password = string.Empty;
+    }
+
+    private void ResetAll()
+    {
+        IsBusy = false;
+        NeedsSftpSetup = false;
+        ErrorMessage = null;
+        SuccessMessage = null;
+        Logs.Clear();
+
+        Form = new BackrestResticFormModel();
+        _editContext = new EditContext(Form);
+    }
+
+    private void AddLog(string step, string message, ProcessLogLevel level)
+    {
+        Logs.Add(new ProcessLogEntry(DateTimeOffset.UtcNow, step, message, level));
+    }
+
+    private sealed record ProcessLogEntry(DateTimeOffset Timestamp, string Step, string Message, ProcessLogLevel Level)
+    {
+        public string CssClass => Level switch
+        {
+            ProcessLogLevel.Success => "success",
+            ProcessLogLevel.Warning => "warning",
+            ProcessLogLevel.Error => "error",
+            _ => "info"
+        };
+    }
+
+    private enum ProcessLogLevel
+    {
+        Info,
+        Success,
+        Warning,
+        Error
+    }
+}

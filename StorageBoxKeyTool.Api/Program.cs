@@ -19,14 +19,14 @@ app.Lifetime.ApplicationStarted.Register(() =>
 
     if (urls.Length == 0)
     {
-        Console.WriteLine("Storage Box SSH Key Installer started.");
+        Console.WriteLine("Hetzner StorageBox Helper started.");
         Console.WriteLine("Open in browser: http://localhost:8080");
         return;
     }
 
     foreach (var url in urls)
     {
-        Console.WriteLine($"Storage Box SSH Key Installer started. Open in browser: {url}");
+        Console.WriteLine($"Hetzner StorageBox Helper started. Open in browser: {url}");
     }
 });
 
@@ -100,6 +100,48 @@ api.MapPost("/storagebox/upload", (UploadKeyRequest request, StorageBoxSftpServi
     catch (Exception ex)
     {
         return CreateErrorResult(StatusCodes.Status400BadRequest, "upload", ex.Message, null);
+    }
+});
+
+api.MapPost("/storagebox/backrest/check-ssh-login", (CheckSshLoginRequest request, StorageBoxSftpService storageBoxService) =>
+{
+    try
+    {
+        var response = storageBoxService.CheckSshLogin(request);
+        return Results.Ok(response);
+    }
+    catch (ValidationException ex)
+    {
+        return CreateErrorResult(StatusCodes.Status400BadRequest, "validate", ex.Message, null);
+    }
+    catch (TimeoutException ex)
+    {
+        return CreateErrorResult(StatusCodes.Status504GatewayTimeout, "backrest-precheck", ex.Message, null);
+    }
+    catch (Exception ex)
+    {
+        return CreateErrorResult(StatusCodes.Status400BadRequest, "backrest-precheck", ex.Message, null);
+    }
+});
+
+api.MapPost("/storagebox/backrest/apply", (ApplyBackrestResticRequest request, StorageBoxSftpService storageBoxService) =>
+{
+    try
+    {
+        var response = storageBoxService.ApplyBackrestResticCompatibility(request);
+        return Results.Ok(response);
+    }
+    catch (ValidationException ex)
+    {
+        return CreateErrorResult(StatusCodes.Status400BadRequest, "backrest-precheck", ex.Message, null);
+    }
+    catch (TimeoutException ex)
+    {
+        return CreateErrorResult(StatusCodes.Status504GatewayTimeout, "backrest", ex.Message, null);
+    }
+    catch (Exception ex)
+    {
+        return CreateErrorResult(StatusCodes.Status400BadRequest, "backrest", ex.Message, null);
     }
 });
 

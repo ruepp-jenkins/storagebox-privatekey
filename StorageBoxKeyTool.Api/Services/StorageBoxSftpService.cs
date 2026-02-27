@@ -20,9 +20,9 @@ public sealed class StorageBoxSftpService
     {
         var target = StorageBoxInputValidator.ValidateTarget(request.Username);
         var password = StorageBoxInputValidator.ValidatePassword(request.Password);
+        var rootDirectory = StorageBoxInputValidator.ValidateRootDirectory(request.RootDirectory);
         var normalizedPublicKey = PublicKeyUtility.NormalizeOpenSshPublicKey(request.PublicKey);
         var incomingFingerprint = PublicKeyUtility.ComputeSha256Fingerprint(normalizedPublicKey);
-        var rootDirectory = StorageBoxInputValidator.ValidateRootDirectory(request.RootDirectory);
         var authorizedKeysPath = BuildRemotePath(rootDirectory, AuthorizedKeysRelativePath);
 
         using var client = CreateClient(target, password);
@@ -44,14 +44,7 @@ public sealed class StorageBoxSftpService
         }
 
         var existingContent = DownloadTextFile(client, authorizedKeysPath);
-        var isConfigured = IsAuthorizedKeysConfigured(
-            existingContent,
-            normalizedPublicKey,
-            request.BackrestResticCompatible,
-            rootDirectory
-        );
-
-        if (isConfigured)
+        if (PublicKeyUtility.ContainsPublicKey(existingContent, normalizedPublicKey))
         {
             return new CheckKeyResponse(
                 RemoteKeyState.Identical,
@@ -82,15 +75,113 @@ public sealed class StorageBoxSftpService
         var target = StorageBoxInputValidator.ValidateTarget(request.Username);
         var password = StorageBoxInputValidator.ValidatePassword(request.Password);
         var rootDirectory = StorageBoxInputValidator.ValidateRootDirectory(request.RootDirectory);
+        var normalizedPublicKey = PublicKeyUtility.NormalizeOpenSshPublicKey(request.PublicKey);
+        var fingerprint = PublicKeyUtility.ComputeSha256Fingerprint(normalizedPublicKey);
+        var authorizedKeysPath = BuildRemotePath(rootDirectory, AuthorizedKeysRelativePath);
 
-        var normalizedPublicKey = string.Empty;
-        var fingerprint = string.Empty;
-        if (request.UploadSshPublicKey)
+        using var client = CreateClient(target, password);
+        ConnectClient(client);
+        EnsureRootDirectoryExists(client, rootDirectory);
+        EnsureDirectory(client, rootDirectory, SshDirectoryRelativePath);
+
+        var existingContent = client.Exists(authorizedKeysPath)
+            ? DownloadTextFile(client, authorizedKeysPath)
+            : null;
+
+        if (existingContent is not null && PublicKeyUtility.ContainsPublicKey(existingContent, normalizedPublicKey))
         {
-            normalizedPublicKey = PublicKeyUtility.NormalizeOpenSshPublicKey(request.PublicKey);
-            fingerprint = PublicKeyUtility.ComputeSha256Fingerprint(normalizedPublicKey);
+            return new UploadKeyResponse(
+                true,
+                false,
+                BuildUploadResponseMessage(changed: false),
+                authorizedKeysPath,
+                fingerprint
+            );
         }
 
+        if (existingContent is not null && !request.Overwrite)
+        {
+            throw new StorageBoxConflictException("Remote authorized_keys exists and differs from the provided key. Explicit overwrite confirmation is required.");
+        }
+
+        var mergedContent = PublicKeyUtility.MergeAuthorizedKeysContent(
+            existingContent,
+            normalizedPublicKey,
+            target.Login,
+            target.Host,
+            backrestResticCompatible: false,
+            rootDirectory
+        );
+
+        UploadTextFile(client, authorizedKeysPath, mergedContent);
+
+        var verificationContent = DownloadTextFile(client, authorizedKeysPath);
+        if (!PublicKeyUtility.ContainsPublicKey(verificationContent, normalizedPublicKey))
+        {
+            throw new InvalidOperationException("Upload verification failed. The remote authorized_keys file does not contain the expected key.");
+        }
+
+        return new UploadKeyResponse(
+            true,
+            true,
+            BuildUploadResponseMessage(changed: true),
+            authorizedKeysPath,
+            fingerprint
+        );
+    }
+
+    public CheckSshLoginResponse CheckSshLogin(CheckSshLoginRequest request)
+    {
+        var target = StorageBoxInputValidator.ValidateTarget(request.Username);
+        var password = StorageBoxInputValidator.ValidatePassword(request.Password);
+        var rootDirectory = StorageBoxInputValidator.ValidateRootDirectory(request.RootDirectory);
+        var authorizedKeysPath = BuildRemotePath(rootDirectory, AuthorizedKeysRelativePath);
+
+        using var client = CreateClient(target, password);
+        ConnectClient(client);
+        EnsureRootDirectoryExists(client, rootDirectory);
+
+        if (!client.Exists(authorizedKeysPath))
+        {
+            return new CheckSshLoginResponse(
+                false,
+                target.Login,
+                target.Host,
+                target.Port,
+                authorizedKeysPath,
+                null
+            );
+        }
+
+        var existingContent = DownloadTextFile(client, authorizedKeysPath);
+        var existingPublicKey = PublicKeyUtility.TryExtractPrimaryPublicKey(existingContent);
+        if (string.IsNullOrWhiteSpace(existingPublicKey))
+        {
+            return new CheckSshLoginResponse(
+                false,
+                target.Login,
+                target.Host,
+                target.Port,
+                authorizedKeysPath,
+                null
+            );
+        }
+
+        return new CheckSshLoginResponse(
+            true,
+            target.Login,
+            target.Host,
+            target.Port,
+            authorizedKeysPath,
+            PublicKeyUtility.ComputeSha256Fingerprint(existingPublicKey)
+        );
+    }
+
+    public ApplyBackrestResticResponse ApplyBackrestResticCompatibility(ApplyBackrestResticRequest request)
+    {
+        var target = StorageBoxInputValidator.ValidateTarget(request.Username);
+        var password = StorageBoxInputValidator.ValidatePassword(request.Password);
+        var rootDirectory = StorageBoxInputValidator.ValidateRootDirectory(request.RootDirectory);
         var authorizedKeysPath = BuildRemotePath(rootDirectory, AuthorizedKeysRelativePath);
         var rcloneConfigPath = BuildRemotePath(rootDirectory, RcloneConfigRelativePath);
 
@@ -98,84 +189,62 @@ public sealed class StorageBoxSftpService
         ConnectClient(client);
         EnsureRootDirectoryExists(client, rootDirectory);
 
-        var sshChanged = false;
-        if (request.UploadSshPublicKey)
+        if (!client.Exists(authorizedKeysPath))
         {
-            EnsureDirectory(client, rootDirectory, SshDirectoryRelativePath);
+            throw CreateMissingSshLoginException(authorizedKeysPath);
+        }
 
-            var existingContent = client.Exists(authorizedKeysPath)
-                ? DownloadTextFile(client, authorizedKeysPath)
-                : null;
+        var existingContent = DownloadTextFile(client, authorizedKeysPath);
+        var existingPublicKey = PublicKeyUtility.TryExtractPrimaryPublicKey(existingContent);
+        if (string.IsNullOrWhiteSpace(existingPublicKey))
+        {
+            throw CreateMissingSshLoginException(authorizedKeysPath);
+        }
 
-            var alreadyConfigured = IsAuthorizedKeysConfigured(
+        var sshChanged = false;
+        if (!IsBackrestResticConfigured(existingContent, existingPublicKey, rootDirectory))
+        {
+            var mergedContent = PublicKeyUtility.MergeAuthorizedKeysContent(
                 existingContent,
-                normalizedPublicKey,
-                request.BackrestResticCompatible,
+                existingPublicKey,
+                target.Login,
+                target.Host,
+                backrestResticCompatible: true,
                 rootDirectory
             );
 
-            if (!alreadyConfigured)
+            UploadTextFile(client, authorizedKeysPath, mergedContent);
+
+            var verificationContent = DownloadTextFile(client, authorizedKeysPath);
+            if (!IsBackrestResticConfigured(verificationContent, existingPublicKey, rootDirectory))
             {
-                if (existingContent is not null && !request.Overwrite)
-                {
-                    throw new StorageBoxConflictException("Remote authorized_keys exists and differs from the provided key. Explicit overwrite confirmation is required.");
-                }
-
-                var mergedContent = PublicKeyUtility.MergeAuthorizedKeysContent(
-                    existingContent,
-                    normalizedPublicKey,
-                    target.Login,
-                    target.Host,
-                    request.BackrestResticCompatible,
-                    rootDirectory
-                );
-
-                UploadTextFile(client, authorizedKeysPath, mergedContent);
-
-                var verificationContent = DownloadTextFile(client, authorizedKeysPath);
-                var verified = IsAuthorizedKeysConfigured(
-                    verificationContent,
-                    normalizedPublicKey,
-                    request.BackrestResticCompatible,
-                    rootDirectory
-                );
-
-                if (!verified)
-                {
-                    throw new InvalidOperationException("Upload verification failed. The remote authorized_keys file does not contain the expected key configuration.");
-                }
-
-                sshChanged = true;
+                throw new InvalidOperationException("Backrest/restic verification failed. The remote authorized_keys file does not contain the expected command-based key entry.");
             }
+
+            sshChanged = true;
         }
 
-        var rcloneConfigCreated = request.BackrestResticCompatible && EnsureEmptyBackrestRcloneConfig(client, rootDirectory);
-        var changed = sshChanged || rcloneConfigCreated;
+        var rcloneConfigCreated = EnsureEmptyBackrestRcloneConfig(client, rootDirectory);
 
-        return new UploadKeyResponse(
+        return new ApplyBackrestResticResponse(
             true,
-            changed,
-            BuildUploadResponseMessage(request.UploadSshPublicKey, sshChanged, request.BackrestResticCompatible, rcloneConfigCreated),
-            request.UploadSshPublicKey ? authorizedKeysPath : rcloneConfigPath,
-            fingerprint
+            sshChanged || rcloneConfigCreated,
+            BuildBackrestResponseMessage(sshChanged, rcloneConfigCreated),
+            authorizedKeysPath,
+            rcloneConfigPath,
+            PublicKeyUtility.ComputeSha256Fingerprint(existingPublicKey)
         );
     }
 
-    private static bool IsAuthorizedKeysConfigured(
-        string? authorizedKeysContent,
-        string normalizedPublicKey,
-        bool backrestResticCompatible,
-        string rootDirectory)
+    private static bool IsBackrestResticConfigured(string authorizedKeysContent, string normalizedPublicKey, string rootDirectory)
     {
-        if (string.IsNullOrWhiteSpace(authorizedKeysContent))
-        {
-            return false;
-        }
+        return PublicKeyUtility.ContainsBackrestResticEntry(authorizedKeysContent, normalizedPublicKey, rootDirectory)
+            && PublicKeyUtility.ContainsSsh2PublicKeyBlock(authorizedKeysContent, normalizedPublicKey);
+    }
 
-        return backrestResticCompatible
-            ? PublicKeyUtility.ContainsBackrestResticEntry(authorizedKeysContent, normalizedPublicKey, rootDirectory)
-                && PublicKeyUtility.ContainsSsh2PublicKeyBlock(authorizedKeysContent, normalizedPublicKey)
-            : PublicKeyUtility.ContainsPublicKey(authorizedKeysContent, normalizedPublicKey);
+    private static ValidationException CreateMissingSshLoginException(string authorizedKeysPath)
+    {
+        return new ValidationException($"No SSH key login is configured at '{authorizedKeysPath}'. Configure it in the sFTP key tab first.");
     }
 
     private static SftpClient CreateClient(StorageBoxTarget target, string password)
@@ -253,7 +322,6 @@ public sealed class StorageBoxSftpService
         EnsureDirectory(client, rootDirectory, RcloneDirectoryRelativePath);
 
         var rcloneConfigPath = BuildRemotePath(rootDirectory, RcloneConfigRelativePath);
-
         if (client.Exists(rcloneConfigPath))
         {
             return false;
@@ -263,34 +331,31 @@ public sealed class StorageBoxSftpService
         return true;
     }
 
-    internal static string BuildUploadResponseMessage(
-        bool uploadSshPublicKey,
-        bool sshChanged,
-        bool backrestResticCompatible,
-        bool rcloneConfigCreated)
+    internal static string BuildUploadResponseMessage(bool changed)
     {
-        if (!uploadSshPublicKey && !backrestResticCompatible)
+        return changed
+            ? "SSH public key uploaded successfully."
+            : "Remote SSH public key already matches the provided key.";
+    }
+
+    internal static string BuildBackrestResponseMessage(bool sshChanged, bool rcloneConfigCreated)
+    {
+        if (sshChanged && rcloneConfigCreated)
         {
-            return "No remote changes were requested.";
+            return "Configured backrest/restic compatibility in authorized_keys and created empty .config/rclone/rclone.conf.";
         }
 
-        var baseMessage = uploadSshPublicKey
-            ? sshChanged
-                ? "SSH public key uploaded successfully."
-                : "Remote SSH public key already matches the provided key."
-            : "SSH public key upload skipped.";
-
-        if (!backrestResticCompatible)
+        if (sshChanged)
         {
-            return baseMessage;
+            return "Configured backrest/restic compatibility in authorized_keys.";
         }
 
         if (rcloneConfigCreated)
         {
-            return $"{baseMessage} Created empty .config/rclone/rclone.conf.";
+            return "Backrest/restic compatibility already existed in authorized_keys. Created empty .config/rclone/rclone.conf.";
         }
 
-        return $"{baseMessage} Backrest/restic compatibility is enabled.";
+        return "Backrest/restic compatibility is already configured.";
     }
 
     private static string BuildRemotePath(string rootDirectory, string relativePath)

@@ -15,7 +15,7 @@ public enum RemoteKeyState
     Different = 2
 }
 
-public sealed class StorageBoxFormModel : IValidatableObject
+public sealed class SftpKeyFormModel : IValidatableObject
 {
     [Required(ErrorMessage = "Username is required.")]
     [RegularExpression("^[a-z0-9]{1,32}-sub[0-9]{1,6}$", ErrorMessage = "Use format <base>-sub<id> (for example u123456-sub12).")]
@@ -43,55 +43,15 @@ public sealed class StorageBoxFormModel : IValidatableObject
 
     public string? ProvidedPublicKey { get; set; }
 
-    public bool UploadSshPublicKey { get; set; } = true;
-
-    public bool BackrestResticCompatible { get; set; }
-
     public bool UseCustomRootDirectory { get; set; }
 
     public string? RootDirectory { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!UploadSshPublicKey && !BackrestResticCompatible)
+        foreach (var validationResult in RootDirectoryValidation.Validate(UseCustomRootDirectory, RootDirectory, nameof(RootDirectory)))
         {
-            yield return new ValidationResult(
-                "Enable at least one operation: upload SSH public key or backrest/restic compatibility.",
-                [nameof(UploadSshPublicKey), nameof(BackrestResticCompatible)]
-            );
-        }
-
-        if (UseCustomRootDirectory)
-        {
-            if (string.IsNullOrWhiteSpace(RootDirectory))
-            {
-                yield return new ValidationResult(
-                    "Provide a custom root directory.",
-                    [nameof(RootDirectory)]
-                );
-            }
-            else
-            {
-                var normalizedRootDirectory = RootDirectory.Trim();
-                if (normalizedRootDirectory.Length > 1)
-                {
-                    normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
-                }
-
-                if (!string.Equals(normalizedRootDirectory, "/home", StringComparison.Ordinal)
-                    && !normalizedRootDirectory.StartsWith("/home/", StringComparison.Ordinal))
-                {
-                    yield return new ValidationResult(
-                        "Custom root directory must be /home or start with /home/.",
-                        [nameof(RootDirectory)]
-                    );
-                }
-            }
-        }
-
-        if (!UploadSshPublicKey)
-        {
-            yield break;
+            yield return validationResult;
         }
 
         if (KeyMode == KeyInputMode.UseExistingPublicKey && string.IsNullOrWhiteSpace(ProvidedPublicKey))
@@ -143,6 +103,66 @@ public sealed class StorageBoxFormModel : IValidatableObject
     }
 }
 
+public sealed class BackrestResticFormModel : IValidatableObject
+{
+    [Required(ErrorMessage = "Username is required.")]
+    [RegularExpression("^[a-z0-9]{1,32}-sub[0-9]{1,6}$", ErrorMessage = "Use format <base>-sub<id> (for example u123456-sub12).")]
+    public string Username { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Storage Box password is required.")]
+    [StringLength(256, ErrorMessage = "Password is too long.")]
+    public string Password { get; set; } = string.Empty;
+
+    public bool UseCustomRootDirectory { get; set; }
+
+    public string? RootDirectory { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        foreach (var validationResult in RootDirectoryValidation.Validate(UseCustomRootDirectory, RootDirectory, nameof(RootDirectory)))
+        {
+            yield return validationResult;
+        }
+    }
+}
+
+internal static class RootDirectoryValidation
+{
+    public static IEnumerable<ValidationResult> Validate(bool useCustomRootDirectory, string? rootDirectory, string memberName)
+    {
+        if (!useCustomRootDirectory)
+        {
+            yield break;
+        }
+
+        if (string.IsNullOrWhiteSpace(rootDirectory))
+        {
+            yield return new ValidationResult(
+                "Provide a custom root directory.",
+                [memberName]
+            );
+            yield break;
+        }
+
+        var normalizedRootDirectory = rootDirectory.Trim();
+        if (normalizedRootDirectory.Length > 1)
+        {
+            normalizedRootDirectory = normalizedRootDirectory.TrimEnd('/');
+        }
+
+        if (string.Equals(normalizedRootDirectory, "/home", StringComparison.Ordinal)
+            || normalizedRootDirectory.StartsWith("/home/", StringComparison.Ordinal))
+        {
+            yield break;
+        }
+
+        yield return new ValidationResult(
+            "Custom root directory must be /home or start with /home/.",
+            [memberName]
+        );
+    }
+}
+
 public sealed record GenerateKeyRequest(
     string Username,
     string Algorithm,
@@ -164,7 +184,6 @@ public sealed record CheckKeyRequest(
     string Username,
     string Password,
     string PublicKey,
-    bool BackrestResticCompatible,
     string RootDirectory
 );
 
@@ -182,11 +201,39 @@ public sealed record CheckKeyResponse(
 public sealed record UploadKeyRequest(
     string Username,
     string Password,
-    string? PublicKey,
+    string PublicKey,
     bool Overwrite,
-    bool UploadSshPublicKey,
-    bool BackrestResticCompatible,
     string RootDirectory
+);
+
+public sealed record CheckSshLoginRequest(
+    string Username,
+    string Password,
+    string RootDirectory
+);
+
+public sealed record CheckSshLoginResponse(
+    bool HasSshPublicKey,
+    string Login,
+    string Host,
+    int Port,
+    string DestinationPath,
+    string? ExistingFingerprintSha256
+);
+
+public sealed record ApplyBackrestResticRequest(
+    string Username,
+    string Password,
+    string RootDirectory
+);
+
+public sealed record ApplyBackrestResticResponse(
+    bool Success,
+    bool Changed,
+    string Message,
+    string AuthorizedKeysPath,
+    string RcloneConfigPath,
+    string FingerprintSha256
 );
 
 public sealed record UploadKeyResponse(

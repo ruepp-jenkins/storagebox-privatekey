@@ -1,4 +1,19 @@
 ﻿@inherits LayoutComponentBase
-<div class="app-frame">
-    @Body
+
+<div class="app-shell">
+    <aside class="side-nav panel">
+        <div class="brand">
+            <p class="eyebrow">Application</p>
+            <h1>Hetzner StorageBox Helper</h1>
+        </div>
+
+        <nav class="nav-list" aria-label="Primary">
+            <NavLink href="/sftp-key" class="nav-link" Match="NavLinkMatch.All">sFTP key</NavLink>
+            <NavLink href="/backrest-restic" class="nav-link" Match="NavLinkMatch.All">backrest / restic</NavLink>
+        </nav>
+    </aside>
+
+    <main class="app-frame">
+        @Body
+    </main>
 </div>

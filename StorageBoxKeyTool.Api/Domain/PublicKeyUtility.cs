@@ -259,6 +259,28 @@ internal static partial class PublicKeyUtility
 
     public static string? TryComputePrimaryFingerprint(string? authorizedKeysContent)
     {
+        var normalizedPublicKey = TryExtractPrimaryPublicKey(authorizedKeysContent);
+        if (string.IsNullOrWhiteSpace(normalizedPublicKey))
+        {
+            return null;
+        }
+
+        try
+        {
+            return ComputeSha256Fingerprint(normalizedPublicKey);
+        }
+        catch (ValidationException)
+        {
+            return null;
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+
+    public static string? TryExtractPrimaryPublicKey(string? authorizedKeysContent)
+    {
         if (string.IsNullOrWhiteSpace(authorizedKeysContent))
         {
             return null;
@@ -278,7 +300,7 @@ internal static partial class PublicKeyUtility
 
             try
             {
-                return ComputeSha256Fingerprint(normalized);
+                return NormalizeOpenSshPublicKey(normalized);
             }
             catch (ValidationException)
             {

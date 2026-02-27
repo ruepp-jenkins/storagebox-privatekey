@@ -28,7 +28,6 @@ public sealed record CheckKeyRequest(
     string Username,
     string Password,
     string PublicKey,
-    bool BackrestResticCompatible,
     string RootDirectory
 );
 
@@ -46,11 +45,39 @@ public sealed record CheckKeyResponse(
 public sealed record UploadKeyRequest(
     string Username,
     string Password,
-    string? PublicKey,
+    string PublicKey,
     bool Overwrite,
-    bool UploadSshPublicKey,
-    bool BackrestResticCompatible,
     string RootDirectory
+);
+
+public sealed record CheckSshLoginRequest(
+    string Username,
+    string Password,
+    string RootDirectory
+);
+
+public sealed record CheckSshLoginResponse(
+    bool HasSshPublicKey,
+    string Login,
+    string Host,
+    int Port,
+    string DestinationPath,
+    string? ExistingFingerprintSha256
+);
+
+public sealed record ApplyBackrestResticRequest(
+    string Username,
+    string Password,
+    string RootDirectory
+);
+
+public sealed record ApplyBackrestResticResponse(
+    bool Success,
+    bool Changed,
+    string Message,
+    string AuthorizedKeysPath,
+    string RcloneConfigPath,
+    string FingerprintSha256
 );
 
 public sealed record UploadKeyResponse(
