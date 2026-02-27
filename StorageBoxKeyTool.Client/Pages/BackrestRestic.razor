@@ -25,6 +25,16 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="validation-summary" />
 
+            <div class="field-full setup-info">
+                <h3>What gets changed and why</h3>
+                <ul>
+                    <li>Ensures <code>/home/.config/rclone/rclone.conf</code> exists (created only if missing).</li>
+                    <li>Updates <code>/home/.ssh/authorized_keys</code> with a command entry for your SSH key/certificate login.</li>
+                    <li>On that login, <code>rclone serve restic --stdio /home</code> is started directly, which is required for the backrest/restic connection flow.</li>
+                </ul>
+                <p class="field-hint">After applying compatibility, configure your connection using the values in <strong>Configure backrest / restic</strong> below.</p>
+            </div>
+
             <div class="actions field-full">
                 <button type="submit" class="btn btn-primary" disabled="@IsBusy">
                     @(IsBusy ? "Running..." : "Apply compatibility")

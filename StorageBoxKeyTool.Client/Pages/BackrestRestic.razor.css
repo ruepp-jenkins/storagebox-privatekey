@@ -125,6 +125,24 @@ label {
     padding: 0.95rem;
 }
 
+.setup-info {
+    background: color-mix(in oklab, var(--surface-soft) 86%, #132026);
+    border: 1px solid color-mix(in oklab, var(--accent) 40%, var(--field-border));
+    border-radius: 14px;
+    padding: 0.95rem;
+}
+
+.setup-info h3 {
+    margin: 0 0 0.55rem;
+}
+
+.setup-info ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.4rem;
+}
+
 .config-panel {
     display: grid;
     gap: 0.85rem;
