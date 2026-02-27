@@ -85,7 +85,7 @@ pipeline {
 
                     withEnv(["IMAGE_REF=${imageRef}"]) {
                         sh '''
-                            set -euo pipefail
+                            set -eu
                             echo "Verifying pushed manifest for ${IMAGE_REF}"
                             manifest_output="$(docker buildx imagetools inspect "${IMAGE_REF}")"
                             printf '%s\n' "${manifest_output}"
