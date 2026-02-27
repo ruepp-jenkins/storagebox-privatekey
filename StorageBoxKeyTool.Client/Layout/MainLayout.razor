@@ -1,4 +1,20 @@
 ﻿@inherits LayoutComponentBase
+@using System.Net
+@using System.Net.Sockets
+@inject StorageBoxConnectionState ConnectionState
+@inject StorageBoxApiClient ApiClient
+@inject NavigationManager Navigation
+
+@if (_showNonLocalHostWarning)
+{
+    <section class="public-warning" role="alert" aria-live="polite">
+        <strong>Security warning: this instance is not running on a local/private host.</strong>
+        <p>
+            Current host: <code>@_currentHost</code>. Anyone with access to this UI can submit Storage Box credentials.
+            Run locally whenever possible, or set <code>STORAGEBOX_DISABLE_NON_LOCAL_WARNING=true</code> only when this is intentionally hosted.
+        </p>
+    </section>
+}
 
 <div class="layout-shell">
     <aside class="layout-nav" aria-label="Primary navigation">
@@ -19,9 +35,105 @@
                 <span class="nav-copy">Prepare rclone/restic compatibility</span>
             </NavLink>
         </nav>
+
+        <section class="connection-box">
+            <h2>Global connection</h2>
+
+            <div class="connection-field">
+                <label for="globalUsername">Storage Box username</label>
+                <InputText id="globalUsername" class="nav-input" @bind-Value="ConnectionState.Username" autocomplete="username" placeholder="u123456-sub12" />
+            </div>
+
+            <div class="connection-field">
+                <label for="globalPassword">Storage Box password</label>
+                <InputText id="globalPassword" type="password" class="nav-input" @bind-Value="ConnectionState.Password" autocomplete="current-password" />
+            </div>
+        </section>
     </aside>
 
     <section class="layout-page">
         @Body
     </section>
 </div>
+
+@code {
+    private bool _showNonLocalHostWarning;
+    private string _currentHost = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentHost = ResolveCurrentHost();
+        if (IsLocalOrPrivateHost(_currentHost))
+        {
+            return;
+        }
+
+        try
+        {
+            var response = await ApiClient.GetUiSecurityConfigAsync(CancellationToken.None);
+            _showNonLocalHostWarning = !response.SuppressNonLocalHostWarning;
+        }
+        catch
+        {
+            _showNonLocalHostWarning = true;
+        }
+    }
+
+    private string ResolveCurrentHost()
+    {
+        if (!Uri.TryCreate(Navigation.Uri, UriKind.Absolute, out var uri))
+        {
+            return "unknown";
+        }
+
+        return string.IsNullOrWhiteSpace(uri.Host)
+            ? "unknown"
+            : uri.Host;
+    }
+
+    private static bool IsLocalOrPrivateHost(string host)
+    {
+        if (string.IsNullOrWhiteSpace(host) || string.Equals(host, "unknown", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var normalizedHost = host.Trim().Trim('[', ']').TrimEnd('.');
+        if (string.Equals(normalizedHost, "localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (!IPAddress.TryParse(normalizedHost, out var ipAddress))
+        {
+            return false;
+        }
+
+        if (IPAddress.IsLoopback(ipAddress))
+        {
+            return true;
+        }
+
+        if (ipAddress.AddressFamily == AddressFamily.InterNetwork)
+        {
+            var octets = ipAddress.GetAddressBytes();
+            return octets[0] == 10
+                || (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31)
+                || (octets[0] == 192 && octets[1] == 168)
+                || (octets[0] == 169 && octets[1] == 254);
+        }
+
+        if (ipAddress.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            if (ipAddress.IsIPv6LinkLocal || ipAddress.IsIPv6SiteLocal)
+            {
+                return true;
+            }
+
+            var octets = ipAddress.GetAddressBytes();
+            return (octets[0] & 0xFE) == 0xFC;
+        }
+
+        return false;
+    }
+}

@@ -1,6 +1,9 @@
 @page "/backrest-restic"
 @using System.Net
+@using System.Text.RegularExpressions
 @inject StorageBoxApiClient ApiClient
+@inject StorageBoxConnectionState ConnectionState
+@implements IDisposable
 
 <PageTitle>Hetzner StorageBox Helper - backrest / restic</PageTitle>
 
@@ -15,23 +18,12 @@
     </header>
 
     <section class="panel">
-        <h2>Connection setup</h2>
+        <h2>Compatibility setup</h2>
+        <p class="field-hint">Global username and password are configured in the left navigation.</p>
 
         <EditForm EditContext="@_editContext" OnSubmit="HandleSubmitAsync" class="form-grid" autocomplete="off">
             <DataAnnotationsValidator />
             <ValidationSummary class="validation-summary" />
-
-            <div class="field">
-                <label for="username">Storage Box username</label>
-                <InputText id="username" class="field-input" @bind-Value="Form.Username" autocomplete="username" placeholder="u123456-sub12" />
-                <ValidationMessage For="@(() => Form.Username)" />
-            </div>
-
-            <div class="field">
-                <label for="password">Storage Box password</label>
-                <InputText id="password" type="password" class="field-input" @bind-Value="Form.Password" autocomplete="current-password" />
-                <ValidationMessage For="@(() => Form.Password)" />
-            </div>
 
             <div class="field field-full box">
                 <label for="rootDirectory">Root directory</label>
@@ -146,12 +138,12 @@
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(Form.Username))
+            if (string.IsNullOrWhiteSpace(ConnectionState.Username))
             {
                 return "<username>-sub<sub-id>";
             }
 
-            return Form.Username.Trim().ToLowerInvariant();
+            return ConnectionState.Username.Trim().ToLowerInvariant();
         }
     }
 
@@ -159,12 +151,12 @@
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(Form.Username))
+            if (string.IsNullOrWhiteSpace(ConnectionState.Username))
             {
                 return "<username>-sub<sub-id>.your-storagebox.de";
             }
 
-            return $"{Form.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
+            return $"{ConnectionState.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
         }
     }
 
@@ -177,6 +169,7 @@
     protected override void OnInitialized()
     {
         _editContext = new EditContext(Form);
+        ConnectionState.Changed += HandleConnectionChanged;
     }
 
     private async Task HandleSubmitAsync(EditContext _)
@@ -192,10 +185,15 @@
             return;
         }
 
-        await RunWorkflowAsync();
+        if (!TryGetConnection(out var username, out var password))
+        {
+            return;
+        }
+
+        await RunWorkflowAsync(username, password);
     }
 
-    private async Task RunWorkflowAsync()
+    private async Task RunWorkflowAsync(string username, string password)
     {
         IsBusy = true;
         ErrorMessage = null;
@@ -210,8 +208,8 @@
 
             var precheckResponse = await ApiClient.CheckSshLoginAsync(
                 new CheckSshLoginRequest(
-                    Form.Username.Trim().ToLowerInvariant(),
-                    Form.Password,
+                    username,
+                    password,
                     EffectiveRootDirectory
                 ),
                 CancellationToken.None
@@ -229,8 +227,8 @@
 
             var applyResponse = await ApiClient.ApplyBackrestResticAsync(
                 new ApplyBackrestResticRequest(
-                    Form.Username.Trim().ToLowerInvariant(),
-                    Form.Password,
+                    username,
+                    password,
                     EffectiveRootDirectory
                 ),
                 CancellationToken.None
@@ -258,7 +256,6 @@
         }
         finally
         {
-            ClearSensitiveFields();
             IsBusy = false;
         }
     }
@@ -293,9 +290,43 @@
             : normalizedRootDirectory;
     }
 
-    private void ClearSensitiveFields()
+    private bool TryGetConnection(out string username, out string password)
     {
-        Form.Password = string.Empty;
+        username = ConnectionState.Username.Trim().ToLowerInvariant();
+        password = ConnectionState.Password;
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            ErrorMessage = "Set the global Storage Box username in the left navigation first.";
+            AddLog("Validate", ErrorMessage, ProcessLogLevel.Warning);
+            return false;
+        }
+
+        if (!UsernamePattern.IsMatch(username))
+        {
+            ErrorMessage = "Global username must use format <base>-sub<id> (for example u123456-sub12).";
+            AddLog("Validate", ErrorMessage, ProcessLogLevel.Warning);
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            ErrorMessage = "Set the global Storage Box password in the left navigation first.";
+            AddLog("Validate", ErrorMessage, ProcessLogLevel.Warning);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void HandleConnectionChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ConnectionState.Changed -= HandleConnectionChanged;
     }
 
     private void ResetAll()
@@ -333,4 +364,6 @@
         Warning,
         Error
     }
+
+    private static readonly Regex UsernamePattern = new("^[a-z0-9]{1,32}-sub[0-9]{1,6}$", RegexOptions.CultureInvariant);
 }

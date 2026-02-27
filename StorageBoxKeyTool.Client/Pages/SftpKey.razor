@@ -1,7 +1,10 @@
 @page "/sftp-key"
 @using System.Net
+@using System.Text.RegularExpressions
 @inject StorageBoxApiClient ApiClient
+@inject StorageBoxConnectionState ConnectionState
 @inject IJSRuntime JsRuntime
+@implements IDisposable
 
 <PageTitle>Hetzner StorageBox Helper - sFTP key</PageTitle>
 
@@ -16,24 +19,12 @@
     </header>
 
     <section class="panel">
-        <h2>Connection setup</h2>
+        <h2>sFTP key setup</h2>
+        <p class="field-hint">Global username and password are configured in the left navigation.</p>
 
         <EditForm EditContext="@_editContext" OnSubmit="HandleSubmitAsync" class="form-grid" autocomplete="off">
             <DataAnnotationsValidator />
             <ValidationSummary class="validation-summary" />
-
-            <div class="field">
-                <label for="username">Storage Box username</label>
-                <InputText id="username" class="field-input" @bind-Value="Form.Username" autocomplete="username" placeholder="u123456-sub12" />
-                <p class="field-hint">Enter the full login, including suffix (for example <code>u123456-sub12</code>).</p>
-                <ValidationMessage For="@(() => Form.Username)" />
-            </div>
-
-            <div class="field">
-                <label for="password">Storage Box password</label>
-                <InputText id="password" type="password" class="field-input" @bind-Value="Form.Password" autocomplete="current-password" />
-                <ValidationMessage For="@(() => Form.Password)" />
-            </div>
 
             <div class="field field-full box">
                 <label for="rootDirectory">Root directory</label>
@@ -282,12 +273,12 @@
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(Form.Username))
+            if (string.IsNullOrWhiteSpace(ConnectionState.Username))
             {
                 return "<username>-sub<sub-id>";
             }
 
-            return Form.Username.Trim().ToLowerInvariant();
+            return ConnectionState.Username.Trim().ToLowerInvariant();
         }
     }
 
@@ -295,12 +286,12 @@
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(Form.Username))
+            if (string.IsNullOrWhiteSpace(ConnectionState.Username))
             {
                 return "<username>-sub<sub-id>.your-storagebox.de";
             }
 
-            return $"{Form.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
+            return $"{ConnectionState.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
         }
     }
 
@@ -312,6 +303,7 @@
     {
         ApplyAlgorithmDefaults();
         _editContext = new EditContext(Form);
+        ConnectionState.Changed += HandleConnectionChanged;
     }
 
     private async Task HandleSubmitAsync(EditContext _)
@@ -327,10 +319,15 @@
             return;
         }
 
-        await RunWorkflowAsync();
+        if (!TryGetConnection(out var username, out var password))
+        {
+            return;
+        }
+
+        await RunWorkflowAsync(username, password);
     }
 
-    private async Task RunWorkflowAsync()
+    private async Task RunWorkflowAsync(string username, string password)
     {
         IsBusy = true;
         AwaitingOverwrite = false;
@@ -345,14 +342,14 @@
         {
             AddLog("Validate", "Input accepted. Preparing workflow.", ProcessLogLevel.Info);
 
-            var publicKey = await ResolvePublicKeyAsync();
+            var publicKey = await ResolvePublicKeyAsync(username);
             PreparedPublicKey = publicKey;
 
             AddLog("Check", "Connecting to Storage Box and checking remote authorized_keys.", ProcessLogLevel.Info);
             var checkResponse = await ApiClient.CheckRemoteKeyAsync(
                 new CheckKeyRequest(
-                    Form.Username.Trim().ToLowerInvariant(),
-                    Form.Password,
+                    username,
+                    password,
                     publicKey,
                     EffectiveRootDirectory
                 ),
@@ -376,7 +373,7 @@
                 return;
             }
 
-            await UploadAsync(overwrite: false);
+            await UploadAsync(username, password, overwrite: false);
         }
         catch (ApiClientException ex)
         {
@@ -405,6 +402,11 @@
             return;
         }
 
+        if (!TryGetConnection(out var username, out var password))
+        {
+            return;
+        }
+
         IsBusy = true;
         ErrorMessage = null;
         SuccessMessage = null;
@@ -412,7 +414,7 @@
         try
         {
             AddLog("Upload", "Overwrite confirmed by user. Uploading remote authorized_keys.", ProcessLogLevel.Warning);
-            await UploadAsync(overwrite: true);
+            await UploadAsync(username, password, overwrite: true);
         }
         catch (ApiClientException ex)
         {
@@ -434,7 +436,7 @@
         }
     }
 
-    private async Task UploadAsync(bool overwrite)
+    private async Task UploadAsync(string username, string password, bool overwrite)
     {
         if (string.IsNullOrWhiteSpace(PreparedPublicKey))
         {
@@ -445,8 +447,8 @@
 
         var uploadResponse = await ApiClient.UploadRemoteKeyAsync(
             new UploadKeyRequest(
-                Form.Username.Trim().ToLowerInvariant(),
-                Form.Password,
+                username,
+                password,
                 PreparedPublicKey,
                 overwrite,
                 EffectiveRootDirectory
@@ -470,7 +472,7 @@
         ClearSensitiveFields();
     }
 
-    private async Task<string> ResolvePublicKeyAsync()
+    private async Task<string> ResolvePublicKeyAsync(string username)
     {
         if (Form.KeyMode == KeyInputMode.UseExistingPublicKey)
         {
@@ -481,7 +483,7 @@
         AddLog("Key generation", "Creating a new SSH key pair.", ProcessLogLevel.Info);
         var generated = await ApiClient.GenerateKeyAsync(
             new GenerateKeyRequest(
-                Form.Username.Trim().ToLowerInvariant(),
+                username,
                 Form.Algorithm,
                 Form.KeySize,
                 Form.KeyPassphrase,
@@ -530,7 +532,6 @@
 
     private void ClearSensitiveFields()
     {
-        Form.Password = string.Empty;
         Form.KeyPassphrase = string.Empty;
         Form.ConfirmKeyPassphrase = string.Empty;
     }
@@ -612,9 +613,9 @@
 
     private string BuildFilePrefix()
     {
-        var login = string.IsNullOrWhiteSpace(Form.Username)
+        var login = string.IsNullOrWhiteSpace(ConnectionState.Username)
             ? "storagebox"
-            : Form.Username.Trim().ToLowerInvariant();
+            : ConnectionState.Username.Trim().ToLowerInvariant();
 
         var algorithm = GeneratedKey?.Algorithm?.Replace('-', '_') ?? "ssh_key";
 
@@ -650,6 +651,45 @@
         Logs.Add(new ProcessLogEntry(DateTimeOffset.UtcNow, step, message, level));
     }
 
+    private bool TryGetConnection(out string username, out string password)
+    {
+        username = ConnectionState.Username.Trim().ToLowerInvariant();
+        password = ConnectionState.Password;
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            ErrorMessage = "Set the global Storage Box username in the left navigation first.";
+            AddLog("Validate", ErrorMessage, ProcessLogLevel.Warning);
+            return false;
+        }
+
+        if (!UsernamePattern.IsMatch(username))
+        {
+            ErrorMessage = "Global username must use format <base>-sub<id> (for example u123456-sub12).";
+            AddLog("Validate", ErrorMessage, ProcessLogLevel.Warning);
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            ErrorMessage = "Set the global Storage Box password in the left navigation first.";
+            AddLog("Validate", ErrorMessage, ProcessLogLevel.Warning);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void HandleConnectionChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ConnectionState.Changed -= HandleConnectionChanged;
+    }
+
     private sealed record ProcessLogEntry(DateTimeOffset Timestamp, string Step, string Message, ProcessLogLevel Level)
     {
         public string CssClass => Level switch
@@ -668,4 +708,6 @@
         Warning,
         Error
     }
+
+    private static readonly Regex UsernamePattern = new("^[a-z0-9]{1,32}-sub[0-9]{1,6}$", RegexOptions.CultureInvariant);
 }

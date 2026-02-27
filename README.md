@@ -21,7 +21,9 @@ The API serves the Blazor static files, so you open one local URL.
   - Host: `<base-username>-sub<sub-id>.your-storagebox.de`
   - Port: `23`
 - Passwords and passphrases are processed in memory only.
-- UI clears password/passphrase fields after each finished run (except while waiting for overwrite confirmation).
+- UI shows a prominent warning banner when accessed from a non-local host (not `localhost`, loopback, or private network IP ranges).
+- Warning banner can be suppressed intentionally with environment variable `STORAGEBOX_DISABLE_NON_LOCAL_WARNING=true`.
+- Global password stays in the left navigation until changed manually; key passphrase fields are cleared after each finished run.
 - No password/passphrase values are written to logs.
 - The API log level is set to `Warning`.
 - Generated key files are created in a temporary directory only during generation and removed immediately after readback.
@@ -33,21 +35,25 @@ The UI has a left navigation with two entries:
 - `sFTP key`
 - `backrest / restic`
 
+Global connection credentials are configured once in the left navigation and reused for both workflows:
+
+- Storage Box username (`<base>-sub<id>`, for example `u123456-sub12`)
+- Storage Box password
+
 ### sFTP key
 
-1. Fill in username (for example `u123456-sub12`) and password.
-2. Optionally set custom root directory (`/home` default, custom path must be `/home` or start with `/home/`).
-3. Choose key source:
+1. Set root directory (`/home` default, path must be `/home` or start with `/home/`).
+2. Choose key source:
    - generate a new key pair (`ed25519` / `ecdsa` / `rsa`), or
    - provide an existing OpenSSH public key.
-4. Start process:
+3. Start process:
    - remote check of `<root>/.ssh/authorized_keys`,
    - if key differs: explicit overwrite confirmation required,
    - upload/update only SSH key content (preserving unrelated lines where possible).
 
 ### backrest / restic
 
-1. Fill in username and password (and optional custom root directory).
+1. Set root directory (`/home` default, path must be `/home` or start with `/home/`).
 2. Pre-check runs first:
    - if no SSH key login exists in `<root>/.ssh/authorized_keys`, the workflow errors immediately and points to the `sFTP key` tab.
 3. If pre-check passes, apply compatibility setup:
@@ -76,6 +82,12 @@ docker run --rm -p 127.0.0.1:8080:8080 ruepp/storagebox-privatekey
 
 ```bash
 podman run --rm -p 127.0.0.1:8080:8080 ruepp/storagebox-privatekey
+```
+
+If you intentionally host this on a non-local/public endpoint and want to suppress the UI security warning banner:
+
+```bash
+docker run --rm -p 127.0.0.1:8080:8080 -e STORAGEBOX_DISABLE_NON_LOCAL_WARNING=true ruepp/storagebox-privatekey
 ```
 
 Open: `http://localhost:8080`

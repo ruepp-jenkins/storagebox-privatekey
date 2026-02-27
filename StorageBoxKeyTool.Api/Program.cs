@@ -4,6 +4,7 @@ using StorageBoxKeyTool.Api.Domain;
 using StorageBoxKeyTool.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var suppressNonLocalHostWarning = NonLocalHostWarningSettings.IsSuppressed(builder.Configuration);
 
 builder.Services.AddSingleton<SshKeyGenerationService>();
 builder.Services.AddSingleton<StorageBoxSftpService>();
@@ -35,6 +36,11 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 var api = app.MapGroup("/api");
+
+api.MapGet("/ui/security-config", () =>
+{
+    return Results.Ok(new UiSecurityConfigResponse(suppressNonLocalHostWarning));
+});
 
 api.MapPost("/key/generate", async (GenerateKeyRequest request, SshKeyGenerationService keyService, CancellationToken cancellationToken) =>
 {

@@ -31,6 +31,31 @@ public sealed class StorageBoxApiClient(HttpClient httpClient)
         return PostAsync<ApplyBackrestResticResponse>("api/storagebox/backrest/apply", request, cancellationToken);
     }
 
+    public async Task<UiSecurityConfigResponse> GetUiSecurityConfigAsync(CancellationToken cancellationToken)
+    {
+        using var response = await httpClient.GetAsync("api/ui/security-config", cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<UiSecurityConfigResponse>(cancellationToken: cancellationToken);
+            if (result is null)
+            {
+                throw new ApiClientException("ui", "The API returned an empty response.", response.StatusCode, null);
+            }
+
+            return result;
+        }
+
+        var apiError = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(cancellationToken: cancellationToken);
+        if (apiError is not null)
+        {
+            throw new ApiClientException(apiError.Step, apiError.Message, response.StatusCode, apiError.Detail);
+        }
+
+        var rawError = await response.Content.ReadAsStringAsync(cancellationToken);
+        throw new ApiClientException("ui", rawError, response.StatusCode, null);
+    }
+
     private async Task<TResponse> PostAsync<TResponse>(string relativePath, object payload, CancellationToken cancellationToken)
     {
         using var response = await httpClient.PostAsJsonAsync(relativePath, payload, cancellationToken);

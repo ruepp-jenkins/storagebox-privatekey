@@ -93,3 +93,7 @@ public sealed record ApiErrorResponse(
     string Message,
     string? Detail
 );
+
+public sealed record UiSecurityConfigResponse(
+    bool SuppressNonLocalHostWarning
+);

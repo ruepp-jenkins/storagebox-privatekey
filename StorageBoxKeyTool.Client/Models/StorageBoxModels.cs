@@ -17,14 +17,6 @@ public enum RemoteKeyState
 
 public sealed class SftpKeyFormModel : IValidatableObject
 {
-    [Required(ErrorMessage = "Username is required.")]
-    [RegularExpression("^[a-z0-9]{1,32}-sub[0-9]{1,6}$", ErrorMessage = "Use format <base>-sub<id> (for example u123456-sub12).")]
-    public string Username { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Storage Box password is required.")]
-    [StringLength(256, ErrorMessage = "Password is too long.")]
-    public string Password { get; set; } = string.Empty;
-
     public KeyInputMode KeyMode { get; set; } = KeyInputMode.GenerateNewKeyPair;
 
     [Required(ErrorMessage = "Please choose an algorithm.")]
@@ -103,14 +95,6 @@ public sealed class SftpKeyFormModel : IValidatableObject
 
 public sealed class BackrestResticFormModel : IValidatableObject
 {
-    [Required(ErrorMessage = "Username is required.")]
-    [RegularExpression("^[a-z0-9]{1,32}-sub[0-9]{1,6}$", ErrorMessage = "Use format <base>-sub<id> (for example u123456-sub12).")]
-    public string Username { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Storage Box password is required.")]
-    [StringLength(256, ErrorMessage = "Password is too long.")]
-    public string Password { get; set; } = string.Empty;
-
     public string RootDirectory { get; set; } = "/home";
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -239,4 +223,8 @@ public sealed record ApiErrorResponse(
     string Step,
     string Message,
     string? Detail
+);
+
+public sealed record UiSecurityConfigResponse(
+    bool SuppressNonLocalHostWarning
 );

@@ -133,6 +133,7 @@ Agent guidance for working in this repository.
 - Do not add telemetry that could capture credential-like payloads.
 - Do not loosen hostname/port restrictions without explicit requirement.
 - Keep API logging level conservative (`Warning` in appsettings).
+- Keep non-local hosting warning enabled by default; only allow suppression via `STORAGEBOX_DISABLE_NON_LOCAL_WARNING=true` (intentional deployments).
 
 ## 11) Blazor / Frontend Conventions
 
@@ -143,9 +144,11 @@ Agent guidance for working in this repository.
 - Keep components responsive (desktop + mobile layouts).
 - Use scoped CSS (`.razor.css`) for component-specific styles.
 - Keep the left navigation with two entries (`sFTP key`, `backrest / restic`).
+- Keep global connection inputs (username/password) in the left navigation and reuse them across workflows.
 - Keep workflow-specific UI isolated per navigation entry (do not mix actions between tabs/pages).
 - In backrest/restic flow, pre-check must fail fast when no SSH key login is configured and provide a clear path to the `sFTP key` entry.
-- Support optional custom root directory input (`/home` default, custom path must remain under `/home`).
+- Support root directory input with `/home` default; custom path must remain under `/home`.
+- Show a prominent warning banner when the app is accessed from non-local/non-private hosts.
 
 ## 12) Files to Avoid Editing Directly
 
