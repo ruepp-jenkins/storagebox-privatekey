@@ -43,13 +43,11 @@ public sealed class SftpKeyFormModel : IValidatableObject
 
     public string? ProvidedPublicKey { get; set; }
 
-    public bool UseCustomRootDirectory { get; set; }
-
-    public string? RootDirectory { get; set; }
+    public string RootDirectory { get; set; } = "/home";
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        foreach (var validationResult in RootDirectoryValidation.Validate(UseCustomRootDirectory, RootDirectory, nameof(RootDirectory)))
+        foreach (var validationResult in RootDirectoryValidation.Validate(RootDirectory, nameof(RootDirectory)))
         {
             yield return validationResult;
         }
@@ -113,13 +111,11 @@ public sealed class BackrestResticFormModel : IValidatableObject
     [StringLength(256, ErrorMessage = "Password is too long.")]
     public string Password { get; set; } = string.Empty;
 
-    public bool UseCustomRootDirectory { get; set; }
-
-    public string? RootDirectory { get; set; }
+    public string RootDirectory { get; set; } = "/home";
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        foreach (var validationResult in RootDirectoryValidation.Validate(UseCustomRootDirectory, RootDirectory, nameof(RootDirectory)))
+        foreach (var validationResult in RootDirectoryValidation.Validate(RootDirectory, nameof(RootDirectory)))
         {
             yield return validationResult;
         }
@@ -128,17 +124,12 @@ public sealed class BackrestResticFormModel : IValidatableObject
 
 internal static class RootDirectoryValidation
 {
-    public static IEnumerable<ValidationResult> Validate(bool useCustomRootDirectory, string? rootDirectory, string memberName)
+    public static IEnumerable<ValidationResult> Validate(string? rootDirectory, string memberName)
     {
-        if (!useCustomRootDirectory)
-        {
-            yield break;
-        }
-
         if (string.IsNullOrWhiteSpace(rootDirectory))
         {
             yield return new ValidationResult(
-                "Provide a custom root directory.",
+                "Root directory is required.",
                 [memberName]
             );
             yield break;

@@ -1,19 +1,27 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="app-shell">
-    <aside class="side-nav panel">
+<div class="layout-shell">
+    <aside class="layout-nav" aria-label="Primary navigation">
         <div class="brand">
-            <p class="eyebrow">Application</p>
-            <h1>Hetzner StorageBox Helper</h1>
+            <p class="eyebrow">Hetzner</p>
+            <h1>StorageBox Helper</h1>
+            <p class="tagline">SSH/SFTP workflows on port <code>23</code></p>
         </div>
 
-        <nav class="nav-list" aria-label="Primary">
-            <NavLink href="/sftp-key" class="nav-link" Match="NavLinkMatch.All">sFTP key</NavLink>
-            <NavLink href="/backrest-restic" class="nav-link" Match="NavLinkMatch.All">backrest / restic</NavLink>
+        <nav class="nav-list">
+            <NavLink href="/sftp-key" class="nav-link" Match="NavLinkMatch.All">
+                <span class="nav-title">sFTP key</span>
+                <span class="nav-copy">Generate or upload key login</span>
+            </NavLink>
+
+            <NavLink href="/backrest-restic" class="nav-link" Match="NavLinkMatch.All">
+                <span class="nav-title">backrest / restic</span>
+                <span class="nav-copy">Prepare rclone/restic compatibility</span>
+            </NavLink>
         </nav>
     </aside>
 
-    <main class="app-frame">
+    <section class="layout-page">
         @Body
-    </main>
+    </section>
 </div>

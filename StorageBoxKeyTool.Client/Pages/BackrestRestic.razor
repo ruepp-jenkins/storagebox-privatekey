@@ -33,22 +33,11 @@
                 <ValidationMessage For="@(() => Form.Password)" />
             </div>
 
-            <div class="field-full options box">
-                <h3>Paths</h3>
-                <label class="option-toggle">
-                    <InputCheckbox @bind-Value="Form.UseCustomRootDirectory" />
-                    <span>Use custom root directory (default <code>/home</code>).</span>
-                </label>
-
-                @if (Form.UseCustomRootDirectory)
-                {
-                    <div class="field custom-root">
-                        <label for="rootDirectory">Custom root directory</label>
-                        <InputText id="rootDirectory" class="field-input" @bind-Value="Form.RootDirectory" placeholder="/home/my-folder" />
-                        <p class="field-hint">Must be <code>/home</code> or start with <code>/home/</code>.</p>
-                        <ValidationMessage For="@(() => Form.RootDirectory)" />
-                    </div>
-                }
+            <div class="field field-full box">
+                <label for="rootDirectory">Root directory</label>
+                <InputText id="rootDirectory" class="field-input" @bind-Value="Form.RootDirectory" placeholder="/home" />
+                <p class="field-hint">Must be <code>/home</code> or start with <code>/home/</code>.</p>
+                <ValidationMessage For="@(() => Form.RootDirectory)" />
             </div>
 
             <div class="derived box field-full">
@@ -288,7 +277,7 @@
 
     private string ResolveRootDirectory()
     {
-        if (!Form.UseCustomRootDirectory || string.IsNullOrWhiteSpace(Form.RootDirectory))
+        if (string.IsNullOrWhiteSpace(Form.RootDirectory))
         {
             return "/home";
         }
