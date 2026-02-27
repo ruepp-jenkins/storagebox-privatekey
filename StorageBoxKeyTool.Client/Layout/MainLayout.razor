@@ -38,15 +38,29 @@
 
         <section class="connection-box">
             <h2>Global connection</h2>
+            <p class="connection-copy">Used by both navigation entries.</p>
 
             <div class="connection-field">
                 <label for="globalUsername">Storage Box username</label>
-                <InputText id="globalUsername" class="nav-input" @bind-Value="ConnectionState.Username" autocomplete="username" placeholder="u123456-sub12" />
+                <input
+                    id="globalUsername"
+                    type="text"
+                    class="nav-input"
+                    value="@ConnectionState.Username"
+                    @oninput="HandleUsernameInput"
+                    autocomplete="username"
+                    placeholder="u123456-sub12" />
             </div>
 
             <div class="connection-field">
                 <label for="globalPassword">Storage Box password</label>
-                <InputText id="globalPassword" type="password" class="nav-input" @bind-Value="ConnectionState.Password" autocomplete="current-password" />
+                <input
+                    id="globalPassword"
+                    type="password"
+                    class="nav-input"
+                    value="@ConnectionState.Password"
+                    @oninput="HandlePasswordInput"
+                    autocomplete="current-password" />
             </div>
         </section>
     </aside>
@@ -135,5 +149,15 @@
         }
 
         return false;
+    }
+
+    private void HandleUsernameInput(ChangeEventArgs eventArgs)
+    {
+        ConnectionState.Username = eventArgs.Value?.ToString() ?? string.Empty;
+    }
+
+    private void HandlePasswordInput(ChangeEventArgs eventArgs)
+    {
+        ConnectionState.Password = eventArgs.Value?.ToString() ?? string.Empty;
     }
 }

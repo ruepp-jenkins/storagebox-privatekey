@@ -137,6 +137,12 @@
     color: var(--text-soft);
 }
 
+.connection-copy {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+}
+
 .connection-field {
     display: grid;
     gap: 0.3rem;
