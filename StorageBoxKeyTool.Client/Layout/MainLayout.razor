@@ -4,7 +4,6 @@
 @inject StorageBoxConnectionState ConnectionState
 @inject StorageBoxApiClient ApiClient
 @inject NavigationManager Navigation
-@inject IJSRuntime JsRuntime
 
 @if (_showNonLocalHostWarning)
 {
@@ -41,39 +40,24 @@
             <h2>Global connection</h2>
             <p class="connection-copy">Used by both navigation entries.</p>
 
-            <div class="connection-field">
-                <label for="globalUsername">Storage Box username</label>
-                <input
-                    id="globalUsername"
-                    type="text"
-                    class="nav-input"
-                    value="@ConnectionState.Username"
-                    @oninput="HandleUsernameInput"
-                    autocomplete="username"
-                    placeholder="u123456-sub12" />
-            </div>
+            <EditableInputBox
+                Id="globalUsername"
+                Label="Storage Box username"
+                Value="@ConnectionState.Username"
+                ValueChanged="HandleUsernameChanged"
+                Placeholder="u123456-sub12"
+                Autocomplete="username" />
 
-            <div class="connection-field">
-                <label for="globalPassword">Storage Box password</label>
-                <input
-                    id="globalPassword"
-                    type="password"
-                    class="nav-input"
-                    value="@ConnectionState.Password"
-                    @oninput="HandlePasswordInput"
-                    autocomplete="current-password" />
-            </div>
+            <EditableInputBox
+                Id="globalPassword"
+                Label="Storage Box password"
+                Value="@ConnectionState.Password"
+                ValueChanged="HandlePasswordChanged"
+                Type="password"
+                Autocomplete="current-password" />
 
             <div class="connection-host">
-                <span>Hostname in use</span>
-                <div class="host-copy-row">
-                    <input class="nav-input mono-input" value="@HostDisplay" readonly onclick="this.select()" />
-                    <button type="button" class="copy-host-btn" @onclick="CopyHostAsync" disabled="@(!CanCopyHost)">Copy</button>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(_hostCopyFeedback))
-                {
-                    <p class="connection-copy-feedback">@_hostCopyFeedback</p>
-                }
+                <ReadOnlyCopyBox Label="Hostname in use" Value="@DerivedHost" EmptyDisplay="add username" CanCopy="@CanCopyHost" />
             </div>
         </section>
     </aside>
@@ -86,7 +70,6 @@
 @code {
     private bool _showNonLocalHostWarning;
     private string _currentHost = string.Empty;
-    private string? _hostCopyFeedback;
 
     protected override async Task OnInitializedAsync()
     {
@@ -165,33 +148,16 @@
         return false;
     }
 
-    private void HandleUsernameInput(ChangeEventArgs eventArgs)
+    private Task HandleUsernameChanged(string value)
     {
-        ConnectionState.Username = eventArgs.Value?.ToString() ?? string.Empty;
-        _hostCopyFeedback = null;
+        ConnectionState.Username = value;
+        return Task.CompletedTask;
     }
 
-    private void HandlePasswordInput(ChangeEventArgs eventArgs)
+    private Task HandlePasswordChanged(string value)
     {
-        ConnectionState.Password = eventArgs.Value?.ToString() ?? string.Empty;
-    }
-
-    private async Task CopyHostAsync()
-    {
-        if (!CanCopyHost)
-        {
-            return;
-        }
-
-        try
-        {
-            await JsRuntime.InvokeVoidAsync("storageBoxKeyTool.copyText", DerivedHost);
-            _hostCopyFeedback = "Hostname copied.";
-        }
-        catch (JSException)
-        {
-            _hostCopyFeedback = "Copy failed in this browser context. Please copy manually.";
-        }
+        ConnectionState.Password = value;
+        return Task.CompletedTask;
     }
 
     private string DerivedHost
@@ -206,10 +172,6 @@
             return $"{ConnectionState.Username.Trim().ToLowerInvariant()}.your-storagebox.de";
         }
     }
-
-    private string HostDisplay => string.IsNullOrWhiteSpace(DerivedHost)
-        ? "add username"
-        : DerivedHost;
 
     private bool CanCopyHost => !string.IsNullOrWhiteSpace(DerivedHost);
 }

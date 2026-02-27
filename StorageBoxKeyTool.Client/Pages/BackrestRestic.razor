@@ -2,7 +2,6 @@
 @using System.Text.RegularExpressions
 @inject StorageBoxApiClient ApiClient
 @inject StorageBoxConnectionState ConnectionState
-@inject IJSRuntime JsRuntime
 @implements IDisposable
 
 <PageTitle>Hetzner StorageBox Helper - backrest / restic</PageTitle>
@@ -48,47 +47,25 @@
         <h2>Configure backrest / restic</h2>
         <p class="field-hint">Use these values in your repository settings after compatibility has been applied.</p>
 
-        <div class="value-group">
-            <label for="privateKeyPath">Local private key path</label>
-            <input
-                id="privateKeyPath"
-                type="text"
-                class="field-input"
-                value="@PrivateKeyPath"
-                @oninput="HandlePrivateKeyPathInput"
-                placeholder="~/.ssh/id_ed25519" />
-            <p class="field-hint">If your key is stored elsewhere, update this path.</p>
-        </div>
+        <EditableInputBox
+            Id="privateKeyPath"
+            Label="Local private key path"
+            Value="@PrivateKeyPath"
+            ValueChanged="HandlePrivateKeyPathChanged"
+            Placeholder="~/.ssh/id_ed25519"
+            Hint="If your key is stored elsewhere, update this path." />
 
-        <div class="value-group">
-            <label for="repositoryUri">Repository URI</label>
-            <div class="copy-row">
-                <input id="repositoryUri" class="field-input mono-input" value="@RepositoryUri" readonly onclick="this.select()" />
-                <button type="button" class="btn btn-secondary copy-btn" @onclick="CopyRepositoryUriAsync">Copy</button>
-            </div>
-            <p class="field-hint"><code>rclone:</code> is correct; connection details are supplied via the flags.</p>
-        </div>
+        <ReadOnlyCopyBox
+            Label="Repository URI"
+            Value="@RepositoryUri"
+            Hint="rclone: is correct; connection details are supplied via the flags." />
 
-        <div class="value-group">
-            <label for="resticFlags">Flags</label>
-            <div class="copy-row">
-                <input id="resticFlags" class="field-input mono-input" value="@ResticFlagsDisplay" readonly onclick="this.select()" />
-                <button type="button" class="btn btn-secondary copy-btn" @onclick="CopyResticFlagsAsync" disabled="@(!CanCopyResticFlags)">Copy</button>
-            </div>
-            @if (!CanCopyResticFlags)
-            {
-                <p class="field-hint">Enter a global username in the left navigation to generate flags.</p>
-            }
-            else
-            {
-                <p class="field-hint">Root in use: <code>@DefaultRootDirectory</code>.</p>
-            }
-        </div>
-
-        @if (!string.IsNullOrWhiteSpace(CopyFeedback))
-        {
-            <p class="copy-feedback">@CopyFeedback</p>
-        }
+        <ReadOnlyCopyBox
+            Label="Flags"
+            Value="@ResticFlags"
+            EmptyDisplay="add username"
+            CanCopy="@CanCopyResticFlags"
+            Hint="@ResticFlagsHint" />
     </section>
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
@@ -154,8 +131,6 @@
 
     private string? SuccessMessage { get; set; }
 
-    private string? CopyFeedback { get; set; }
-
     private string PrivateKeyPath { get; set; } = "~/.ssh/id_ed25519";
 
     private const string RepositoryUri = "rclone:";
@@ -194,11 +169,11 @@
         ? string.Empty
         : $"-o rclone.program=\"ssh -p 23 {DerivedLogin}@{DerivedHost} -i {EffectivePrivateKeyPath}\"";
 
-    private string ResticFlagsDisplay => CanCopyResticFlags
-        ? ResticFlags
-        : "add username";
-
     private bool CanCopyResticFlags => !string.IsNullOrWhiteSpace(ResticFlags);
+
+    private string ResticFlagsHint => CanCopyResticFlags
+        ? $"Root in use: {DefaultRootDirectory}."
+        : "Enter a global username in the left navigation to generate flags.";
 
     private string EffectivePrivateKeyPath => string.IsNullOrWhiteSpace(PrivateKeyPath)
         ? "~/.ssh/id_ed25519"
@@ -236,7 +211,6 @@
         IsBusy = true;
         ErrorMessage = null;
         SuccessMessage = null;
-        CopyFeedback = null;
         NeedsSftpSetup = false;
         Logs.Clear();
 
@@ -345,37 +319,10 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
-    private void HandlePrivateKeyPathInput(ChangeEventArgs eventArgs)
+    private Task HandlePrivateKeyPathChanged(string value)
     {
-        PrivateKeyPath = eventArgs.Value?.ToString() ?? string.Empty;
-    }
-
-    private async Task CopyRepositoryUriAsync()
-    {
-        await CopyTextAsync(RepositoryUri, "Repository URI copied.");
-    }
-
-    private async Task CopyResticFlagsAsync()
-    {
-        if (!CanCopyResticFlags)
-        {
-            return;
-        }
-
-        await CopyTextAsync(ResticFlags, "Flags copied.");
-    }
-
-    private async Task CopyTextAsync(string value, string successMessage)
-    {
-        try
-        {
-            await JsRuntime.InvokeVoidAsync("storageBoxKeyTool.copyText", value);
-            CopyFeedback = successMessage;
-        }
-        catch (JSException)
-        {
-            CopyFeedback = "Copy failed in this browser context. Please copy manually.";
-        }
+        PrivateKeyPath = value;
+        return Task.CompletedTask;
     }
 
     public void Dispose()
@@ -389,7 +336,6 @@
         NeedsSftpSetup = false;
         ErrorMessage = null;
         SuccessMessage = null;
-        CopyFeedback = null;
         PrivateKeyPath = "~/.ssh/id_ed25519";
         Logs.Clear();
 

@@ -1,0 +1,69 @@
+@inject IJSRuntime JsRuntime
+
+<div class="value-box readonly-box">
+    <div class="value-box-header">
+        <span class="value-label">@Label</span>
+        <span class="value-badge">Read-only value</span>
+    </div>
+
+    <div class="value-row">
+        <div class="value-display @(Monospace ? "mono" : string.Empty)" title="@DisplayValue">@DisplayValue</div>
+        <button type="button" class="copy-btn" @onclick="CopyAsync" disabled="@(!CanCopyValue)">Copy</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Hint))
+    {
+        <p class="value-hint">@Hint</p>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_feedback))
+    {
+        <p class="value-feedback">@_feedback</p>
+    }
+</div>
+
+@code {
+    private string? _feedback;
+
+    [Parameter]
+    public required string Label { get; set; }
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool CanCopy { get; set; } = true;
+
+    [Parameter]
+    public string EmptyDisplay { get; set; } = "not available";
+
+    [Parameter]
+    public bool Monospace { get; set; } = true;
+
+    [Parameter]
+    public string? Hint { get; set; }
+
+    private string DisplayValue => string.IsNullOrWhiteSpace(Value)
+        ? EmptyDisplay
+        : Value;
+
+    private bool CanCopyValue => CanCopy && !string.IsNullOrWhiteSpace(Value);
+
+    private async Task CopyAsync()
+    {
+        if (!CanCopyValue)
+        {
+            return;
+        }
+
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("storageBoxKeyTool.copyText", Value);
+            _feedback = "Copied.";
+        }
+        catch (JSException)
+        {
+            _feedback = "Copy failed in this browser context. Please copy manually.";
+        }
+    }
+}

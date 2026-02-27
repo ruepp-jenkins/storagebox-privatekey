@@ -1,0 +1,95 @@
+.value-box {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.7rem;
+    border-radius: 12px;
+    border: 1px solid var(--field-border);
+    background: color-mix(in oklab, var(--surface-soft) 90%, #101820);
+}
+
+.readonly-box {
+    border-color: color-mix(in oklab, var(--warning) 54%, var(--field-border));
+}
+
+.value-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.value-label {
+    font-weight: 600;
+}
+
+.value-badge {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: color-mix(in oklab, var(--warning) 68%, white 8%);
+    font-weight: 700;
+}
+
+.value-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.value-display {
+    width: 100%;
+    border: 1px dashed color-mix(in oklab, var(--field-border) 88%, white 8%);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--field-bg) 92%, #111820);
+    color: var(--text-main);
+    padding: 0.55rem 0.62rem;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
+.value-display.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.9rem;
+}
+
+.copy-btn {
+    border: 1px solid #33505d;
+    border-radius: 10px;
+    background: #22333d;
+    color: #d9e8ed;
+    padding: 0.45rem 0.7rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 5rem;
+}
+
+.copy-btn:hover:enabled {
+    background: #2a3e48;
+}
+
+.copy-btn:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+}
+
+.value-hint {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--text-soft);
+}
+
+.value-feedback {
+    margin: 0;
+    color: var(--success);
+    font-size: 0.86rem;
+}
+
+@media (max-width: 860px) {
+    .value-row {
+        grid-template-columns: 1fr;
+    }
+}

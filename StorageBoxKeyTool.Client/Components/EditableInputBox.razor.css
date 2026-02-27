@@ -1,0 +1,57 @@
+.value-box {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.7rem;
+    border-radius: 12px;
+    border: 1px solid var(--field-border);
+    background: color-mix(in oklab, var(--surface-soft) 90%, #101820);
+}
+
+.editable-box {
+    border-color: color-mix(in oklab, var(--accent) 48%, var(--field-border));
+}
+
+.value-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.value-box-header label {
+    font-weight: 600;
+}
+
+.value-badge {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: color-mix(in oklab, var(--accent) 74%, white 8%);
+    font-weight: 700;
+}
+
+.value-input,
+.value-input:focus {
+    font: inherit;
+}
+
+.value-input {
+    width: 100%;
+    border: 1px solid var(--field-border);
+    border-radius: 10px;
+    background: var(--field-bg);
+    color: var(--text-main);
+    padding: 0.55rem 0.62rem;
+    box-sizing: border-box;
+}
+
+.value-input:focus {
+    outline: 2px solid var(--focus-ring);
+    border-color: var(--accent);
+}
+
+.value-hint {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--text-soft);
+}

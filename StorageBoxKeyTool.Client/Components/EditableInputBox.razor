@@ -1,0 +1,51 @@
+<div class="value-box editable-box">
+    <div class="value-box-header">
+        <label for="@Id">@Label</label>
+        <span class="value-badge">Changeable input</span>
+    </div>
+
+    <input
+        id="@Id"
+        type="@Type"
+        class="value-input"
+        value="@Value"
+        @oninput="HandleInput"
+        autocomplete="@Autocomplete"
+        placeholder="@Placeholder" />
+
+    @if (!string.IsNullOrWhiteSpace(Hint))
+    {
+        <p class="value-hint">@Hint</p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public required string Id { get; set; }
+
+    [Parameter]
+    public required string Label { get; set; }
+
+    [Parameter]
+    public required string Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public string Type { get; set; } = "text";
+
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    [Parameter]
+    public string? Autocomplete { get; set; }
+
+    [Parameter]
+    public string? Hint { get; set; }
+
+    private async Task HandleInput(ChangeEventArgs eventArgs)
+    {
+        await ValueChanged.InvokeAsync(eventArgs.Value?.ToString() ?? string.Empty);
+    }
+}
