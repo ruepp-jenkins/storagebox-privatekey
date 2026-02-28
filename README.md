@@ -139,5 +139,13 @@ dotnet test StorageBoxKeyTool.Tests/StorageBoxKeyTool.Tests.csproj --filter "Ful
 ```
 
 ## License
-
 This project is licensed under the MIT License. See `LICENSE` for details.
+
+# Screenshots
+
+## sFTP key
+<img width="1410" height="835" alt="image" src="https://github.com/user-attachments/assets/0fca6c17-563e-47d9-b104-5ff84c62d818" />
+
+# backrest / restic
+Add configuration and instruction to use backrest / restic with a storagebox using the restic http api server.
+<img width="1418" height="1042" alt="image" src="https://github.com/user-attachments/assets/ccf5e59b-54cf-4ef7-a939-2c382642b7b6" />
