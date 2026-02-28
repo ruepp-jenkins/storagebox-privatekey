@@ -51,4 +51,44 @@ public sealed class StorageBoxSftpServiceTests
 
         Assert.Equal("Backrest/restic compatibility is already configured.", result);
     }
+
+    [Fact]
+    public void FindNextBackupNumber_WithNoExistingBackups_Returns1()
+    {
+        var files = new[] { "authorized_keys", ".", ".." };
+
+        var result = StorageBoxSftpService.FindNextBackupNumber(files);
+
+        Assert.Equal(1, result);
+    }
+
+    [Fact]
+    public void FindNextBackupNumber_WithExistingBackup1_Returns2()
+    {
+        var files = new[] { "authorized_keys", "authorized_keys.backup.1" };
+
+        var result = StorageBoxSftpService.FindNextBackupNumber(files);
+
+        Assert.Equal(2, result);
+    }
+
+    [Fact]
+    public void FindNextBackupNumber_WithGapInNumbering_ReturnsNextAfterHighest()
+    {
+        var files = new[] { "authorized_keys", "authorized_keys.backup.1", "authorized_keys.backup.3" };
+
+        var result = StorageBoxSftpService.FindNextBackupNumber(files);
+
+        Assert.Equal(4, result);
+    }
+
+    [Fact]
+    public void FindNextBackupNumber_WithEmptyList_Returns1()
+    {
+        var files = Array.Empty<string>();
+
+        var result = StorageBoxSftpService.FindNextBackupNumber(files);
+
+        Assert.Equal(1, result);
+    }
 }

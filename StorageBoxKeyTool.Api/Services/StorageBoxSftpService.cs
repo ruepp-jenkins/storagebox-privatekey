@@ -113,6 +113,7 @@ public sealed class StorageBoxSftpService
             rootDirectory
         );
 
+        BackupAuthorizedKeysFile(client, authorizedKeysPath);
         UploadTextFile(client, authorizedKeysPath, mergedContent);
 
         var verificationContent = DownloadTextFile(client, authorizedKeysPath);
@@ -213,6 +214,7 @@ public sealed class StorageBoxSftpService
                 rootDirectory
             );
 
+            BackupAuthorizedKeysFile(client, authorizedKeysPath);
             UploadTextFile(client, authorizedKeysPath, mergedContent);
 
             var verificationContent = DownloadTextFile(client, authorizedKeysPath);
@@ -356,6 +358,39 @@ public sealed class StorageBoxSftpService
         }
 
         return "Backrest/restic compatibility is already configured.";
+    }
+
+    private static void BackupAuthorizedKeysFile(SftpClient client, string authorizedKeysPath)
+    {
+        if (!client.Exists(authorizedKeysPath))
+        {
+            return;
+        }
+
+        var directory = authorizedKeysPath[..authorizedKeysPath.LastIndexOf('/')];
+        var existingFiles = client.ListDirectory(directory);
+        var fileNames = existingFiles.Select(f => f.Name).ToList();
+        var nextNumber = FindNextBackupNumber(fileNames);
+        var backupPath = $"{authorizedKeysPath}.backup.{nextNumber}";
+
+        var content = DownloadTextFile(client, authorizedKeysPath);
+        UploadTextFile(client, backupPath, content);
+    }
+
+    internal static int FindNextBackupNumber(IEnumerable<string> fileNames)
+    {
+        var maxNumber = 0;
+        foreach (var name in fileNames)
+        {
+            if (name.StartsWith("authorized_keys.backup.") &&
+                int.TryParse(name["authorized_keys.backup.".Length..], out var number) &&
+                number > maxNumber)
+            {
+                maxNumber = number;
+            }
+        }
+
+        return maxNumber + 1;
     }
 
     private static string BuildRemotePath(string rootDirectory, string relativePath)
