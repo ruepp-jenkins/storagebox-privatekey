@@ -149,6 +149,31 @@
     margin-top: 0.1rem;
 }
 
+.nav-footer {
+    border-top: 1px solid color-mix(in oklab, var(--surface-border) 86%, transparent);
+    margin-top: 0.9rem;
+    padding-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.copyright {
+    color: var(--text-soft);
+    font-size: 0.78rem;
+}
+
+.github-link {
+    color: var(--text-soft);
+    transition: color 140ms ease;
+    display: flex;
+    align-items: center;
+}
+
+.github-link:hover {
+    color: var(--text-main);
+}
+
 @media (max-width: 1000px) {
     .public-warning {
         margin: 0.9rem 0.9rem 0;
