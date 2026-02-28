@@ -28,6 +28,10 @@ The API serves the Blazor static files, so you open one local URL.
 - The API log level is set to `Warning`.
 - Generated key files are created in a temporary directory only during generation and removed immediately after readback.
 
+## Automatic backup of `authorized_keys`
+
+Before overwriting `/home/.ssh/authorized_keys`, both workflows automatically create a numbered backup on the Storage Box (e.g., `authorized_keys.backup.1`, `.backup.2`, etc.). This prevents data loss if a write goes wrong. If backup creation fails, the operation aborts.
+
 ## Workflow supported
 
 The UI has a left navigation with two entries:
